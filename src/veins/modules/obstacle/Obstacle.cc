@@ -28,6 +28,9 @@ using namespace veins;
 
 using veins::Obstacle;
 
+using Triangle = std::vector<Coord>;
+using Segment = std::vector<Coord>;
+
 Obstacle::Obstacle(std::string id, std::string type, double attenuationPerCut, double attenuationPerMeter)
     : visualRepresentation(nullptr)
     , id(id)
@@ -37,22 +40,51 @@ Obstacle::Obstacle(std::string id, std::string type, double attenuationPerCut, d
 {
 }
 
-void Obstacle::setShape(Coords shape)
+void Obstacle::setShape(Coords shape, double height )
 {
     coords = shape;
+    mesh = {};
     bboxP1 = Coord(1e7, 1e7);
     bboxP2 = Coord(-1e7, -1e7);
-    for (Coords::const_iterator i = coords.begin(); i != coords.end(); ++i) {
+    Coords::const_iterator i = coords.begin();
+    Coords::const_iterator j = (coords.rbegin() + 1).base();
+    Coords::const_iterator first = i;
+    int counter = 0;
+    for (; i != coords.end(); j = i++) {
         bboxP1.x = std::min(i->x, bboxP1.x);
         bboxP1.y = std::min(i->y, bboxP1.y);
         bboxP2.x = std::max(i->x, bboxP2.x);
         bboxP2.y = std::max(i->y, bboxP2.y);
+
+        if(height > 0)
+        {
+            // generating mesh for the walls
+            mesh.push_back(Triangle({ Coord(i->x,i->y,0), Coord(i->x,i->y,height), Coord(j->x,j->y,height)}));
+            mesh.push_back(Triangle({ Coord(j->x,j->y,0), Coord(j->x,j->y,height), Coord(i->x,i->y,0)}));
+
+            // generating mesh for the roof and floor
+            if(counter++ > 1)
+            {
+                mesh.push_back(Triangle({ Coord(first->x,first->y,0), Coord(i->x,i->y,0), Coord(j->x,j->y,0)}));
+                mesh.push_back(Triangle({ Coord(first->x,first->y,height), Coord(i->x,i->y,height), Coord(j->x,j->y,height)}));
+            }
+        }
     }
 }
 
 const Obstacle::Coords& Obstacle::getShape() const
 {
     return coords;
+}
+
+const Obstacle::Mesh& Obstacle::getMesh() const
+{
+    return mesh;
+}
+
+const double Obstacle::getHeight() const
+{
+    return height;
 }
 
 const Coord Obstacle::getBboxP1() const
@@ -65,9 +97,23 @@ const Coord Obstacle::getBboxP2() const
     return bboxP2;
 }
 
+Coord crossProduct(const Coord& v1, const Coord& v2) {
+    Coord result;
+    result.x = v1.y * v2.z - v1.z * v2.y;
+    result.y = v1.z * v2.x - v1.x * v2.z;
+    result.z = v1.x * v2.y - v1.y * v2.x;
+    return result;
+}
+
+double dotProduct(const Coord& v1, const Coord& v2) {
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+
 bool Obstacle::containsPoint(Coord point) const
 {
     bool isInside = false;
+    if(point.z < 0 || point.z > getHeight()) return false;
     const Obstacle::Coords& shape = getShape();
     Obstacle::Coords::const_iterator i = shape.begin();
     Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
@@ -85,7 +131,7 @@ bool Obstacle::containsPoint(Coord point) const
 
 namespace {
 
-double segmentsIntersectAt(const Coord& p1From, const Coord& p1To, const Coord& p2From, const Coord& p2To)
+double segmentsIntersectSegment(const Coord& p1From, const Coord& p1To, const Coord& p2From, const Coord& p2To) 
 {
     double p1x = p1To.x - p1From.x;
     double p1y = p1To.y - p1From.y;
@@ -103,23 +149,92 @@ double segmentsIntersectAt(const Coord& p1From, const Coord& p1To, const Coord& 
 
     return p1Frac;
 }
+
+double segmentsIntersectTriangle(const Segment& segment, const Triangle& triangle) 
+{
+    Coord edge1, edge2, segmentVector, h, s, q;
+    double a, f, u, v, t;
+
+    edge1.x = triangle[1].x - triangle[0].x;
+    edge1.y = triangle[1].y - triangle[0].y;
+    edge1.z = triangle[1].z - triangle[0].z;
+    edge2.x = triangle[2].x - triangle[0].x;
+    edge2.y = triangle[2].y - triangle[0].y;
+    edge2.z = triangle[2].z - triangle[0].z;
+    segmentVector.x = segment[1].x - segment[0].x;
+    segmentVector.y = segment[1].y - segment[0].y;
+    segmentVector.z = segment[1].z - segment[0].z;
+
+    h = crossProduct(segmentVector, edge2);
+    a = dotProduct(edge1, h);
+
+    if (a > -0.00001 && a < 0.00001) {
+        return -1;
+    }
+
+    f = 1 / a;
+    s.x = segment[0].x - triangle[0].x;
+    s.y = segment[0].y - triangle[0].y;
+    s.z = segment[0].z - triangle[0].z;
+
+    u = f * dotProduct(s, h);
+
+    if (u < 0 || u > 1) {
+        return -1;
+    }
+
+    q = crossProduct(s, edge1);
+    v = f * dotProduct(segmentVector, q);
+
+    if (v < 0 || u + v > 1) {
+        return -1;
+    }
+
+    t = f * dotProduct(edge2, q);
+
+    if (t > 0 && t < 1) {
+        return t;
+    }
+
+    return -1;
+}
+
 } // namespace
+
 
 std::vector<double> Obstacle::getIntersections(const Coord& senderPos, const Coord& receiverPos) const
 {
     std::vector<double> intersectAt;
-    const Obstacle::Coords& shape = getShape();
-    Obstacle::Coords::const_iterator i = shape.begin();
-    Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
-    for (; i != shape.end(); j = i++) {
-        const Coord& c1 = *i;
-        const Coord& c2 = *j;
 
-        double i = segmentsIntersectAt(senderPos, receiverPos, c1, c2);
-        if (i != -1) {
-            intersectAt.push_back(i);
+    if(senderPos.z <= 0 && receiverPos.z <= 0 )
+    {
+        const Obstacle::Coords& shape = getShape();
+        Obstacle::Coords::const_iterator i = shape.begin();
+        Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
+        for (; i != shape.end(); j = i++) {
+            const Coord& c1 = *i;
+            const Coord& c2 = *j;
+
+            double i = segmentsIntersectSegment(senderPos, receiverPos, c1, c2);
+            if (i != -1) {
+                intersectAt.push_back(i);
+            }
         }
     }
+    else
+    {
+        const Obstacle::Mesh& mesh = getMesh();
+        Obstacle::Mesh::const_iterator i = mesh.begin();
+        for (; i != mesh.end(); i++) {
+
+            double res = segmentsIntersectTriangle({senderPos, receiverPos}, *i);
+            if (res != -1) {
+                intersectAt.push_back(res);
+            }
+        }
+    }
+
+
     std::sort(intersectAt.begin(), intersectAt.end());
     return intersectAt;
 }

@@ -127,6 +127,8 @@ void ObstacleControl::addFromXml(cXMLElement* xml)
             std::string color = e->getAttribute("color");
             ASSERT(e->getAttribute("shape"));
             std::string shape = e->getAttribute("shape");
+            
+            double height = e->getAttribute("height") ?  std::stof(e->getAttribute("height")) : 0;
 
             Obstacle obs(id, type, getAttenuationPerCut(type), getAttenuationPerMeter(type));
             std::vector<Coord> sh;
@@ -137,7 +139,7 @@ void ObstacleControl::addFromXml(cXMLElement* xml)
                 ASSERT(xya.size() == 2);
                 sh.push_back(Coord(xya[0], xya[1]));
             }
-            obs.setShape(sh,0.0);
+            obs.setShape(sh,height);
             add(obs);
         }
         else {

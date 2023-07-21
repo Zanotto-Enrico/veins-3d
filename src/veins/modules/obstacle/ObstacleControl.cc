@@ -154,7 +154,7 @@ void ObstacleControl::addFromTypeAndShape(std::string id, std::string typeId, st
         throw cRuntimeError("Unsupported obstacle type: \"%s\"", typeId.c_str());
     }
     Obstacle obs(id, typeId, getAttenuationPerCut(typeId), getAttenuationPerMeter(typeId));
-    obs.setShape(shape,0.0);
+    obs.setShape(shape,10.0);/* 10 is temporary, just for testing */
     add(obs);
 }
 

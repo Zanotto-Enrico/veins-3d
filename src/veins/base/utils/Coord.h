@@ -56,12 +56,15 @@ public:
     double z;
     /*@}*/
 
+    int index;
+
 private:
     void copy(const Coord& other)
     {
         x = other.x;
         y = other.y;
         z = other.z;
+        index = other.index;
     }
 
 public:
@@ -70,14 +73,16 @@ public:
         : x(0.0)
         , y(0.0)
         , z(0.0)
+        , index(0.0)
     {
     }
 
     /** @brief Initializes a coordinate. */
-    Coord(double x, double y, double z = 0.0)
+    Coord(double x, double y, double z = 0.0, int index = 0)
         : x(x)
         , y(y)
         , z(z)
+        , index(index)
     {
     }
 
@@ -141,16 +146,15 @@ public:
      * This function computes the cross product of two 3D vectors represented by Coord objects.
      * The resulting Coord represents a vector that is perpendicular to both input vectors.
      *
-     * @param v1 The first 3D vector.
-     * @param v2 The second 3D vector.
-     * @return The cross product vector of v1 and v2.
+     * @param other The second 3D vector.
+     * @return The cross product vector of *this and other.
      */
-    Coord crossProduct(const Coord& v1, const Coord& v2)
+    Coord crossProduct(const Coord& other) const 
     {
         Coord result;
-        result.x = v1.y * v2.z - v1.z * v2.y;
-        result.y = v1.z * v2.x - v1.x * v2.z;
-        result.z = v1.x * v2.y - v1.y * v2.x;
+        result.x = y * other.z - z * other.y;
+        result.y = z * other.x - x * other.z;
+        result.z = x * other.y - y * other.x;
         return result;
     }
 
@@ -160,13 +164,12 @@ public:
      * This function computes the dot product of two 3D vectors represented by Coord objects.
      * The dot product is a scalar value that represents the projection of one vector onto the other.
      *
-     * @param v1 The first 3D vector.
-     * @param v2 The second 3D vector.
-     * @return The dot product of v1 and v2.
+     * @param other The second 3D vector.
+     * @return The dot product of *this and other.
      */
-    double dotProduct(const Coord& v1, const Coord& v2) 
+    double dotProduct(const Coord& other) const
     {
-        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+        return x * other.x + y * other.y + z * other.z;
     }
 
 
@@ -274,7 +277,7 @@ public:
      *
      * Necessary for sorting during polygon triangulation process.
      */
-    friend bool operator<(const Coord& other) const
+    bool operator<(const Coord& other) const
     {
         return x < other.x || (x == other.x && y < other.y);
     }

@@ -136,6 +136,41 @@ public:
     }
 
     /**
+     * @brief Calculates the cross product of two 3D vectors.
+     *
+     * This function computes the cross product of two 3D vectors represented by Coord objects.
+     * The resulting Coord represents a vector that is perpendicular to both input vectors.
+     *
+     * @param v1 The first 3D vector.
+     * @param v2 The second 3D vector.
+     * @return The cross product vector of v1 and v2.
+     */
+    Coord crossProduct(const Coord& v1, const Coord& v2)
+    {
+        Coord result;
+        result.x = v1.y * v2.z - v1.z * v2.y;
+        result.y = v1.z * v2.x - v1.x * v2.z;
+        result.z = v1.x * v2.y - v1.y * v2.x;
+        return result;
+    }
+
+    /**
+     * @brief Calculates the dot product of two 3D vectors.
+     *
+     * This function computes the dot product of two 3D vectors represented by Coord objects.
+     * The dot product is a scalar value that represents the projection of one vector onto the other.
+     *
+     * @param v1 The first 3D vector.
+     * @param v2 The second 3D vector.
+     * @return The dot product of v1 and v2.
+     */
+    double dotProduct(const Coord& v1, const Coord& v2) 
+    {
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+    }
+
+
+    /**
      * @brief Returns the magnitude of the vector that would result from a regular 3D cross product
      * of the input vectors; The values on the z-plane are assumed to be 0 (i.e. treating the 2D space as a plane in the 3D space).
      * The 3D cross product will be perpendicular to that plane, and thus have 0 X & Y components
@@ -232,6 +267,16 @@ public:
     friend bool operator!=(const Coord& a, const Coord& b)
     {
         return !(a == b);
+    }
+
+    /**
+     * @brief Compare 2 coordinates based on x and y position.
+     *
+     * Necessary for sorting during polygon triangulation process.
+     */
+    friend bool operator<(const Coord& other) const
+    {
+        return x < other.x || (x == other.x && y < other.y);
     }
 
     /**

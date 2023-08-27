@@ -28,8 +28,6 @@ using namespace veins;
 
 using veins::Obstacle;
 
-using Triangle = std::vector<Coord>;
-using Segment = std::vector<Coord>;
 
 Obstacle::Obstacle(std::string id, std::string type, double attenuationPerCut, double attenuationPerMeter)
     : visualRepresentation(nullptr)
@@ -49,7 +47,6 @@ void Obstacle::setShape(Coords shape, double height )
     Coords::const_iterator i = coords.begin();
     Coords::const_iterator j = (coords.rbegin() + 1).base();
     Coords::const_iterator first = i;
-    int counter = 0;
     for (; i != coords.end(); j = i++) {
         bboxP1.x = std::min(i->x, bboxP1.x);
         bboxP1.y = std::min(i->y, bboxP1.y);
@@ -59,17 +56,18 @@ void Obstacle::setShape(Coords shape, double height )
         if(height > 0)
         {
             // generating mesh for the walls
-            mesh.push_back(Triangle({ Coord(i->x,i->y,0), Coord(i->x,i->y,height), Coord(j->x,j->y,height)}));
-            mesh.push_back(Triangle({ Coord(j->x,j->y,0), Coord(j->x,j->y,height), Coord(i->x,i->y,0)}));
+            mesh.push_back({ Coord(i->x,i->y,0), Coord(i->x,i->y,height), Coord(j->x,j->y,height)});
+            mesh.push_back({ Coord(j->x,j->y,0), Coord(j->x,j->y,height), Coord(i->x,i->y,0)});
 
-            // generating mesh for the roof and floor
-            if(counter++ > 1)
-            {
-                mesh.push_back(Triangle({ Coord(first->x,first->y,0), Coord(i->x,i->y,0), Coord(j->x,j->y,0)}));
-                mesh.push_back(Triangle({ Coord(first->x,first->y,height), Coord(i->x,i->y,height), Coord(j->x,j->y,height)}));
-            }
         }
     }
+    
+    // generating mesh for the roof and floor
+    Coords shapeWithoutLast(shape.begin(), shape.end() - 1);
+    for(Coords monotonePolygon : partitionPolygonIntoMonotone(shapeWithoutLast))
+    	for(Triangle triangle : triangulateMonotonePolygon(monotonePolygon))
+    		mesh.push_back(triangle);
+    		
 }
 
 const Obstacle::Coords& Obstacle::getShape() const
@@ -96,19 +94,6 @@ const Coord Obstacle::getBboxP2() const
 {
     return bboxP2;
 }
-
-Coord crossProduct(const Coord& v1, const Coord& v2) {
-    Coord result;
-    result.x = v1.y * v2.z - v1.z * v2.y;
-    result.y = v1.z * v2.x - v1.x * v2.z;
-    result.z = v1.x * v2.y - v1.y * v2.x;
-    return result;
-}
-
-double dotProduct(const Coord& v1, const Coord& v2) {
-    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-}
-
 
 bool Obstacle::containsPoint(Coord point) const
 {
@@ -152,45 +137,45 @@ double segmentsIntersectSegment(const Coord& p1From, const Coord& p1To, const Co
 
 double segmentsIntersectTriangle(const Segment& segment, const Triangle& triangle) 
 {
-    Coord edge1, edge2, segmentVector, h, s, q;
+        Coord edge1, edge2, segmentVector, h, s, q;
     double a, f, u, v, t;
 
-    edge1.x = triangle[1].x - triangle[0].x;
-    edge1.y = triangle[1].y - triangle[0].y;
-    edge1.z = triangle[1].z - triangle[0].z;
-    edge2.x = triangle[2].x - triangle[0].x;
-    edge2.y = triangle[2].y - triangle[0].y;
-    edge2.z = triangle[2].z - triangle[0].z;
-    segmentVector.x = segment[1].x - segment[0].x;
-    segmentVector.y = segment[1].y - segment[0].y;
-    segmentVector.z = segment[1].z - segment[0].z;
+    edge1.x = triangle.p2.x - triangle.p1.x;
+    edge1.y = triangle.p2.y - triangle.p1.y;
+    edge1.z = triangle.p2.z - triangle.p1.z;
+    edge2.x = triangle.p3.x - triangle.p1.x;
+    edge2.y = triangle.p3.y - triangle.p1.y;
+    edge2.z = triangle.p3.z - triangle.p1.z;
+    segmentVector.x = segment.p2.x - segment.p1.x;
+    segmentVector.y = segment.p2.y - segment.p1.y;
+    segmentVector.z = segment.p2.z - segment.p1.z;
 
-    h = crossProduct(segmentVector, edge2);
-    a = dotProduct(edge1, h);
+    h = segmentVector.crossProduct(edge2);
+    a = edge1.dotProduct(h);
 
     if (a > -0.00001 && a < 0.00001) {
         return -1;
     }
 
     f = 1 / a;
-    s.x = segment[0].x - triangle[0].x;
-    s.y = segment[0].y - triangle[0].y;
-    s.z = segment[0].z - triangle[0].z;
+    s.x = segment.p1.x - triangle.p1.x;
+    s.y = segment.p1.y - triangle.p1.y;
+    s.z = segment.p1.z - triangle.p1.z;
 
-    u = f * dotProduct(s, h);
+    u = f * s.dotProduct(h);
 
     if (u < 0 || u > 1) {
         return -1;
     }
 
-    q = crossProduct(s, edge1);
-    v = f * dotProduct(segmentVector, q);
+    q = s.crossProduct(edge1);
+    v = f * segmentVector.dotProduct(q);
 
     if (v < 0 || u + v > 1) {
         return -1;
     }
 
-    t = f * dotProduct(edge2, q);
+    t = f * edge2.dotProduct(q);
 
     if (t > 0 && t < 1) {
         return t;

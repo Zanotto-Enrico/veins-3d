@@ -8,9 +8,7 @@
 
 using veins::Coord;
 using veins::Edge;
-
-
-namespace {
+using veins::vertexType;
 
 // Calculate arc length between two indices in a cyclic array
 int veins::arc_length(int i, int j, int N) {
@@ -53,8 +51,8 @@ vertexType veins::getVertexType(const Coord &vertex, const Coord &next, const Co
         return REGULAR_LOWER;
     if(prev.x <= vertex.x && next.x < vertex.x )
     {
-        Coord vector_pc = {vertex.x - prev.x, vertex.y - prev.y, 0.0, 0};
-        Coord vector_pn = {next.x - prev.x, next.y - prev.y, 0.0, 0};
+        Coord vector_pc = Coord(vertex.x - prev.x, vertex.y - prev.y, 0.0, 0);
+        Coord vector_pn = Coord(next.x - prev.x, next.y - prev.y, 0.0, 0);
         double cross_product = vector_pc.x * vector_pn.y - vector_pc.y * vector_pn.x; // cross product between 2 vectors
         
         if(cross_product < 0)   return MERGE;
@@ -63,8 +61,8 @@ vertexType veins::getVertexType(const Coord &vertex, const Coord &next, const Co
     
     if(prev.x >= vertex.x && next.x > vertex.x )
     {
-        Coord vector_pc = {vertex.x - prev.x, vertex.y - prev.y, 0.0, 0};
-        Coord vector_pn = {next.x - prev.x, next.y - prev.y, 0.0, 0};
+        Coord vector_pc = Coord(vertex.x - prev.x, vertex.y - prev.y, 0.0, 0);
+        Coord vector_pn = Coord(next.x - prev.x, next.y - prev.y, 0.0, 0);
         double cross_product = vector_pc.x * vector_pn.y - vector_pc.y * vector_pn.x; // cross product between 2 vectors
         
         if(cross_product < 0)   return SPLIT;
@@ -267,6 +265,4 @@ std::vector<Triangle> veins::triangulateMonotonePolygon(const std::vector<Coord>
     }
 
     return triangles;
-}
-
 }

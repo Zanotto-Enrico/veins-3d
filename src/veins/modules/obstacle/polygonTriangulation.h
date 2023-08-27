@@ -10,7 +10,7 @@ struct Triangle {
     Coord p3;
 };
 
-struct mySegment {
+struct Segment {
     Coord p1;
     Coord p2;
 };
@@ -24,7 +24,7 @@ struct mySegment {
  *
  * @ingroup modules
  */
-class VEINS_API class Edge
+class VEINS_API Edge
 {
 private:
     Coord* helper; // sweep line helper vertex
@@ -239,5 +239,20 @@ vertexType getVertexType(const Coord& vertex, const Coord& next, const Coord& pr
  */
 bool isCounterClockwise(const std::vector<Coord>& vertices);
 
+
+/**
+ * @brief Determines the convexity of three points.
+ *
+ * This function assesses the convexity of three points represented by Coord objects in a 3D space.
+ * It calculates the cross product of the vectors formed by p2 - p1 and p3 - p1 to determine the
+ * orientation of the points. The function returns 1 if the points form a concave curve, -1 if they
+ * form a convex curve, and 0 if the points are aligned.
+ *
+ * @param p1 The first point.
+ * @param p2 The second point.
+ * @param p3 The third point.
+ * @return  1 if concave, -1 if convex, 0 if aligned.
+ */
+int DetermineConvexity(const Coord& p1, const Coord& p2, const Coord& p3);
 
 } // namespace veins

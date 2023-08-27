@@ -28,7 +28,7 @@
 
 #include "veins/base/utils/Coord.h"
 #include "veins/modules/world/annotations/AnnotationManager.h"
-
+#include "veins/modules/obstacle/polygonTriangulation.h"
 
 namespace veins {
 
@@ -39,9 +39,6 @@ namespace veins {
 
 class VEINS_API Obstacle {
 public:
-
-    using Triangle = std::vector<Coord>;
-    using Segment = std::vector<Coord>;
 
     using Coords = std::vector<Coord>;
     using Mesh = std::vector<Triangle>;

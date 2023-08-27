@@ -26,7 +26,6 @@
 
 #include "veins/modules/obstacle/ObstacleControl.h"
 #include "veins/base/modules/BaseWorldUtility.h"
-#include "veins/modules/obstacle/polygonTriangulation.h"
 
 using veins::ObstacleControl;
 

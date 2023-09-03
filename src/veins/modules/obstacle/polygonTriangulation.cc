@@ -9,6 +9,7 @@
 using veins::Coord;
 using veins::Edge;
 using veins::vertexType;
+using veins::Triangle;
 
 // Calculate arc length between two indices in a cyclic array
 int veins::arc_length(int i, int j, int N) {
@@ -225,7 +226,7 @@ int veins::DetermineConvexity(const Coord& p1, const Coord& p2, const Coord& p3)
     Coord v1 = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
     Coord v2 = {p3.x - p1.x, p3.y - p1.y, p3.z - p1.z};
 
-    Coord cross = crossProduct(v1, v2);
+    Coord cross = v1.crossProduct(v2);
     
     if (cross.x > 0 || (cross.x == 0 && (cross.y > 0 || (cross.y == 0 && cross.z > 0))))
         return 1; // Curva concava

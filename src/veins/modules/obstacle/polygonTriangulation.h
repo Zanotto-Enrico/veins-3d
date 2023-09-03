@@ -102,10 +102,7 @@ public:
         } else if (thisMinY >= otherMaxY) {
             return false;
         } else {
-            if(start.x != other.start.x)
-                return start.x > other.start.x;
-            else
-                return end.x > other.end.x;
+            return start.y < other.start.y;
         }
     }
 

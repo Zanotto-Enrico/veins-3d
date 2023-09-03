@@ -55,7 +55,7 @@ public:
     double y;
     double z;
     /*@}*/
-
+    
     int index;
 
 private:
@@ -73,7 +73,7 @@ public:
         : x(0.0)
         , y(0.0)
         , z(0.0)
-        , index(0.0)
+        , index(0)
     {
     }
 

@@ -62,11 +62,17 @@ void Obstacle::setShape(Coords shape, double height )
         }
     }
     
-    // generating mesh for the roof and floor
     Coords shapeWithoutLast(shape.begin(), shape.end() - 1);
     for(Coords monotonePolygon : partitionPolygonIntoMonotone(shapeWithoutLast))
+    {
     	for(Triangle triangle : triangulateMonotonePolygon(monotonePolygon))
-    		mesh.push_back(triangle);
+    	{
+    		triangle.p1.z = 0;triangle.p2.z = 0;triangle.p3.z = 0;
+		mesh.push_back(triangle);
+		triangle.p1.z = height;triangle.p2.z = height;triangle.p3.z = height;
+		mesh.push_back(triangle);
+    	}
+    }
     		
 }
 

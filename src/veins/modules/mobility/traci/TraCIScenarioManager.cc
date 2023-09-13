@@ -418,6 +418,7 @@ void TraCIScenarioManager::init_traci()
                     std::string typeId = commandInterface->polygon(id).getTypeId();
                     if (!obstacles->isTypeSupported(typeId)) continue;
                     std::list<Coord> coords = commandInterface->polygon(id).getShape();
+                    double height = commandInterface->polygon(id).getLayer();
                     std::vector<Coord> shape;
                     std::copy(coords.begin(), coords.end(), std::back_inserter(shape));
                     for (auto p : shape) {
@@ -425,7 +426,7 @@ void TraCIScenarioManager::init_traci()
                             EV_WARN << "WARNING: Playground (" << world->getPgs()->x << ", " << world->getPgs()->y << ") will not fit radio obstacle at (" << p.x << ", " << p.y << ")" << endl;
                         }
                     }
-                    obstacles->addFromTypeAndShape(id, typeId, shape);
+                    obstacles->addFromTypeAndShape(id, typeId, shape, height);
                 }
             }
         }

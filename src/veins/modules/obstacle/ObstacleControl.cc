@@ -148,13 +148,13 @@ void ObstacleControl::addFromXml(cXMLElement* xml)
     }
 }
 
-void ObstacleControl::addFromTypeAndShape(std::string id, std::string typeId, std::vector<Coord> shape)
+void ObstacleControl::addFromTypeAndShape(std::string id, std::string typeId, std::vector<Coord> shape, double height)
 {
     if (!isTypeSupported(typeId)) {
         throw cRuntimeError("Unsupported obstacle type: \"%s\"", typeId.c_str());
     }
     Obstacle obs(id, typeId, getAttenuationPerCut(typeId), getAttenuationPerMeter(typeId));
-    obs.setShape(shape,10.0);/* 10 is temporary, just for testing */
+    obs.setShape(shape, height);/* 10 is temporary, just for testing */
     add(obs);
 }
 

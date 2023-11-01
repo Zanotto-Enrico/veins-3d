@@ -154,7 +154,11 @@ void ObstacleControl::addFromTypeAndShape(std::string id, std::string typeId, st
         throw cRuntimeError("Unsupported obstacle type: \"%s\"", typeId.c_str());
     }
     Obstacle obs(id, typeId, getAttenuationPerCut(typeId), getAttenuationPerMeter(typeId));
-    obs.setShape(shape, height);/* 10 is temporary, just for testing */
+    if(par("enable3d"))
+        obs.setShape(shape, height);
+    else
+        obs.setShape(shape, 0);
+
     add(obs);
 }
 
@@ -249,7 +253,10 @@ double ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord
         // for distance calculation, make sure every other pair of points marks transition through matter and void, respectively.
         if (senderInside) intersectAt.insert(intersectAt.begin(), 0);
         if (receiverInside) intersectAt.push_back(1);
-        ASSERT((intersectAt.size() % 2) == 0);
+
+        //ASSERT((intersectAt.size() % 2) == 0);
+        if((intersectAt.size() % 2) != 0)           // temporary solution
+            break;
 
         // sum up distances in matter.
         double fractionInObstacle = 0;

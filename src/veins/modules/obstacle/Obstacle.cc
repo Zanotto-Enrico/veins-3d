@@ -41,19 +41,19 @@ Obstacle::Obstacle(std::string id, std::string type, double attenuationPerCut, d
 void Obstacle::setShape(Coords shape, double height )
 {
     coords = shape;
+    this-> height = height;
     mesh = {};
     bboxP1 = Coord(1e7, 1e7);
     bboxP2 = Coord(-1e7, -1e7);
     Coords::const_iterator i = coords.begin();
-    Coords::const_iterator j = (coords.rbegin() + 1).base();
-    Coords::const_iterator first = i;
-    for (; i != coords.end(); j = i++) {
+    Coords::const_iterator j = i + 1;
+    for (; i != coords.end(); j = ++i + 1) {
         bboxP1.x = std::min(i->x, bboxP1.x);
         bboxP1.y = std::min(i->y, bboxP1.y);
         bboxP2.x = std::max(i->x, bboxP2.x);
         bboxP2.y = std::max(i->y, bboxP2.y);
 
-        if(height > 0)
+        if(height > 0 && j != coords.end())
         {
             // generating mesh for the walls
             mesh.push_back({ Coord(i->x,i->y,0), Coord(i->x,i->y,height), Coord(j->x,j->y,height)});
@@ -104,7 +104,7 @@ const Coord Obstacle::getBboxP2() const
 bool Obstacle::containsPoint(Coord point) const
 {
     bool isInside = false;
-    if(point.z < 0 || point.z > getHeight()) return false;
+    if(point.z < 0 || (point.z > getHeight() && getHeight() >= 0)) return false;
     const Obstacle::Coords& shape = getShape();
     Obstacle::Coords::const_iterator i = shape.begin();
     Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
@@ -197,7 +197,7 @@ std::vector<double> Obstacle::getIntersections(const Coord& senderPos, const Coo
 {
     std::vector<double> intersectAt;
 
-    if(senderPos.z <= 0 && receiverPos.z <= 0 )
+    if(getHeight() <= 0 )
     {
         const Obstacle::Coords& shape = getShape();
         Obstacle::Coords::const_iterator i = shape.begin();

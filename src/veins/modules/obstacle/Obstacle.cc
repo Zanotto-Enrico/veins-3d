@@ -177,7 +177,7 @@ double segmentsIntersectTriangle(const Segment& segment, const Triangle& triangl
     q = s.crossProduct(edge1);
     v = f * segmentVector.dotProduct(q);
 
-    if (v < 0 || u + v >= 1) {
+    if (v < 0 || u + v > 1) {
         return -1;
     }
 

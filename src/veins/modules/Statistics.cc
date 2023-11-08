@@ -18,21 +18,24 @@ void Statistics::initialize() {
         return;
     }
 
-    file << "run,"  << "sim_time," << "src_addr," << "dst_addr," << "dst_posx," << "dst_posy," << "h_bs," << "rssi," << "snr," << "dst_module" << "\n";
+    file << "run,"  << "sim_time," << "src_addr," << "dst_addr," << "dst_posx," << "dst_posy," << "h_bs," << "rssi," << "snr," << "dst_module," << "distance"<< "numCuts,"<< "fractionInObstacle" "\n";
 
 }
 void Statistics::handleMessage(cMessage *msg) {
 
 }
 
-void Statistics::writeDataToCSV(double src, double dst, double dst_posx, double dst_posy, double snr, double rssi, double sim_time, double h_bs, const std::string& module) {
+void Statistics::writeDataToCSV(double src, double dst, double dst_posx, double dst_posy, double snr, double rssi, double sim_time, double h_bs, const std::string& module, SignalStats signalStats) {
 
 
     if (!file) {
         return;
     }
 
-    file << run << "," << sim_time << "," << src << "," << dst << "," << dst_posx << "," << dst_posy << "," << h_bs << "," << rssi << "," << snr  << "," << module << "\n";
+    file << run << "," << sim_time << "," << src << "," 
+         << dst << "," << dst_posx << "," << dst_posy << "," 
+         << h_bs << "," << rssi << "," << snr  << "," << module 
+         << "," << signalStats.distance << "," <<  signalStats.numCuts  << "," << signalStats.fraction <<  "\n";
 
 }
 

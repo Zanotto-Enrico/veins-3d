@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "veins/SignalStats.h"
+
 using namespace omnetpp;
 
 class Statistics : public cSimpleModule {
@@ -20,7 +22,7 @@ class Statistics : public cSimpleModule {
     virtual void finish() override;
     virtual void handleMessage(cMessage *msg) override;
   public:
-    void writeDataToCSV(double src, double dst, double dst_posx, double dst_posy, double snr, double rssi, double sim_time, double h_bs, const std::string& module);
+  void writeDataToCSV(double src, double dst, double dst_posx, double dst_posy, double snr, double rssi, double sim_time, double h_bs, const std::string& module, SignalStats signalStats);
 };
 
 #endif /* STATISTICS_H_ */

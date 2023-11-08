@@ -24,6 +24,7 @@
 #include <map>
 #include <set>
 
+
 #include "veins/modules/obstacle/ObstacleControl.h"
 #include "veins/base/modules/BaseWorldUtility.h"
 
@@ -216,7 +217,7 @@ std::vector<std::pair<veins::Obstacle*, std::vector<double>>> ObstacleControl::g
     return allIntersections;
 }
 
-double ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord& receiverPos) const
+SignalStats ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord& receiverPos) const
 {
     Enter_Method_Silent();
 
@@ -231,13 +232,16 @@ double ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord
     CacheKey cacheKey(senderPos, receiverPos);
     CacheEntries::const_iterator cacheEntryIter = cacheEntries.find(cacheKey);
     if (cacheEntryIter != cacheEntries.end()) {
-        return cacheEntryIter->second;
+        //return *cacheEntryIter;
     }
 
     // get intersections
     auto intersections = getIntersections(senderPos, receiverPos);
 
+    double totalDistance = senderPos.distance(receiverPos);
     double factor = 1;
+    double totalCuts = 0;
+    double totalFractionInObstacle = 0;
     for (auto i = intersections.begin(); i != intersections.end(); ++i) {
         auto o = i->first;
         auto intersectAt = i->second;
@@ -249,6 +253,7 @@ double ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord
 
         // remember number of cuts before messing with intersection points
         double numCuts = intersectAt.size();
+        totalCuts += numCuts;
 
         // for distance calculation, make sure every other pair of points marks transition through matter and void, respectively.
         if (senderInside) intersectAt.insert(intersectAt.begin(), 0);
@@ -265,9 +270,9 @@ double ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord
             double p2 = *(i++);
             fractionInObstacle += (p2 - p1);
         }
+        totalFractionInObstacle += fractionInObstacle;
 
         // calculate attenuation
-        double totalDistance = senderPos.distance(receiverPos);
         double attenuation = (o->getAttenuationPerCut() * numCuts) + (o->getAttenuationPerMeter() * fractionInObstacle * totalDistance);
         factor *= pow(10.0, -attenuation / 10.0);
 
@@ -275,11 +280,13 @@ double ObstacleControl::calculateAttenuation(const Coord& senderPos, const Coord
         if (factor < 1e-30) break;
     }
 
+    SignalStats ss = SignalStats(totalCuts,totalDistance,totalFractionInObstacle,factor);
+
     // cache result
     if (cacheEntries.size() >= 1000) cacheEntries.clear();
-    cacheEntries[cacheKey] = factor;
+    //cacheEntries[cacheKey] = ss;
 
-    return factor;
+    return ss;
 }
 
 double ObstacleControl::getAttenuationPerCut(std::string type)

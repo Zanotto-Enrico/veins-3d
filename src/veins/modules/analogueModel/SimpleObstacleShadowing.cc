@@ -40,9 +40,10 @@ void SimpleObstacleShadowing::filterSignal(Signal* signal)
     auto senderPos = signal->getSenderPoa().pos.getPositionAt();
     auto receiverPos = signal->getReceiverPoa().pos.getPositionAt();
 
-    double factor = obstacleControl.calculateAttenuation(senderPos, receiverPos);
+    SignalStats stats = obstacleControl.calculateAttenuation(senderPos, receiverPos);
 
-    EV_TRACE << "value is: " << factor << endl;
+    EV_TRACE << "value is: " << stats.factor << endl;
 
-    *signal *= factor;
+    *signal *= stats.factor;
+    signal->setStats(stats);
 }

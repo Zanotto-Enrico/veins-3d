@@ -25,7 +25,7 @@
 #include <memory>
 
 #include "veins/veins.h"
-
+#include "veins/SignalStats.h"
 #include "veins/base/utils/Coord.h"
 #include "veins/modules/obstacle/Obstacle.h"
 #include "veins/modules/world/annotations/AnnotationManager.h"
@@ -68,7 +68,7 @@ public:
     /**
      * calculate additional attenuation by obstacles, return multiplicative factor
      */
-    double calculateAttenuation(const Coord& senderPos, const Coord& receiverPos) const;
+    SignalStats calculateAttenuation(const Coord& senderPos, const Coord& receiverPos) const;
 
 protected:
     struct CacheKey {
@@ -95,7 +95,7 @@ protected:
         }
     };
 
-    typedef std::map<CacheKey, double> CacheEntries;
+    typedef std::map<CacheKey, SignalStats> CacheEntries;
 
     cXMLElement* obstaclesXml; /**< obstacles to add at startup */
     int gridCellSize = 250; /**< size of square grid tiles for obstacle store */

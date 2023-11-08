@@ -559,12 +559,15 @@ void Mac1609_4::setCCAThreshold(double ccaThreshold_dBm)
 
 void Mac1609_4::handleBroadcast(Mac80211Pkt* macPkt, DeciderResult80211* res)
 {
+    SignalStats signalStats = res->getSignalStats();
 
     if(statsModule){
-         BaseMobility* mobMod = (BaseMobility *)getParentModule()->getParentModule()->getSubmodule("mobility");
-         if(mobMod == nullptr)
-             mobMod = (BaseMobility *)getParentModule()->getParentModule()->getSubmodule("veinsmobility");
-         statsModule ->writeDataToCSV( macPkt->getSrcAddr(),
+        BaseMobility* mobMod = (BaseMobility *)getParentModule()->getParentModule()->getSubmodule("mobility");
+
+        if(mobMod == nullptr)
+            mobMod = (BaseMobility *)getParentModule()->getParentModule()->getSubmodule("veinsmobility");
+        
+        statsModule ->writeDataToCSV( macPkt->getSrcAddr(),
                     this->getMACAddress(),
                     mobMod->getPositionAt(simTime()).x,
                     mobMod->getPositionAt(simTime()).y,
@@ -572,8 +575,9 @@ void Mac1609_4::handleBroadcast(Mac80211Pkt* macPkt, DeciderResult80211* res)
                     res->getRecvPower_dBm(),
                     simTime().dbl(),
                     ((BaseMobility *)getModuleByPath("MultipleRSUScenario.rsu[0].mobility"))->getPositionAt(simTime()).z,
-                    getParentModule()->getParentModule()->getFullName()
-                 );
+                    getParentModule()->getParentModule()->getFullName(),
+                    signalStats
+                );
     }
 
     statsReceivedBroadcasts++;

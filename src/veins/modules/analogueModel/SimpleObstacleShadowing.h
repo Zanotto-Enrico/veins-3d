@@ -24,6 +24,7 @@
 
 #include <cstdlib>
 
+#include "veins/SignalStats.h"
 #include "veins/base/phyLayer/AnalogueModel.h"
 #include "veins/base/modules/BaseWorldUtility.h"
 #include "veins/modules/obstacle/ObstacleControl.h"

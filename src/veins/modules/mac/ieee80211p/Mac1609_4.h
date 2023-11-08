@@ -28,6 +28,7 @@
 
 #include "veins/veins.h"
 
+#include "veins/SignalStats.h"
 #include "veins/base/modules/BaseLayer.h"
 #include "veins/modules/phy/PhyLayer80211p.h"
 #include "veins/modules/mac/ieee80211p/DemoBaseApplLayerToMac1609_4Interface.h"

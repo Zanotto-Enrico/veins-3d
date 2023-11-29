@@ -4,10 +4,13 @@
 Define_Module(Statistics);
 
 void Statistics::initialize() {
-    run = getSimulation()->getActiveEnvir()->getConfigEx()->getActiveRunNumber();
+    std::string enable3d = "2d";
+    if(((veins::BaseMacLayer *)getModuleByPath("MultipleRSUScenario.obstacles"))->par("enable3d"))
+        enable3d = "3d";
+    double z = ((veins::BaseMobility *)getModuleByPath("MultipleRSUScenario.rsu[0].mobility"))->getPositionAt(simTime()).z;
 
     std::stringstream a;
-    a << par("outputFilePath").stringValue() << "-#" << run << ".csv";
+    a << par("outputFilePath").stringValue() << "-" << z << "m-" << enable3d.c_str() << ".csv";
     outputFilePath =  a.str();
     EV_TRACE << "Output file path: " << outputFilePath << endl;
 
@@ -18,7 +21,7 @@ void Statistics::initialize() {
         return;
     }
 
-    file << "run,"  << "sim_time," << "src_addr," << "dst_addr," << "dst_posx," << "dst_posy," << "h_bs," << "rssi," << "snr," << "dst_module," << "distance"<< "numCuts,"<< "fractionInObstacle" "\n";
+    file << "run,"  << "sim_time," << "src_addr," << "dst_addr," << "dst_posx," << "dst_posy," << "h_bs," << "rssi," << "snr," << "dst_module," << "distance,"<< "numCuts,"<< "fractionInObstacle" "\n";
 
 }
 void Statistics::handleMessage(cMessage *msg) {

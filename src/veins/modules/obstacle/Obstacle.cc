@@ -104,7 +104,7 @@ const Coord Obstacle::getBboxP2() const
 bool Obstacle::containsPoint(Coord point) const
 {
     bool isInside = false;
-    if(point.z < 0 || (point.z > getHeight() && getHeight() >= 0)) return false;
+    if(point.z < 0 || (point.z > getHeight() && getHeight() > 0)) return false;
     const Obstacle::Coords& shape = getShape();
     Obstacle::Coords::const_iterator i = shape.begin();
     Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();

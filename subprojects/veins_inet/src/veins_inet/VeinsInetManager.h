@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,14 +18,14 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef Veins_VeinsInetManager_h
+#define Veins_VeinsInetManager_h
 
-#include "veins_inet/veins_inet.h"
+#include <omnetpp.h>
 
 #include "veins/modules/mobility/traci/TraCIScenarioManagerLaunchd.h"
-#include "veins_inet/VeinsInetManagerBase.h"
 
-namespace veins {
+namespace Veins {
 
 /**
  * @brief
@@ -38,16 +36,25 @@ namespace veins {
  * @author Christoph Sommer
  *
  */
-class VEINS_INET_API VeinsInetManager : public VeinsInetManagerBase, public TraCIScenarioManagerLaunchd {
-    virtual void initialize(int stage) override;
+class VeinsInetManager : public TraCIScenarioManagerLaunchd {
+	public:
+
+		virtual ~VeinsInetManager();
+		virtual void preInitializeModule(cModule* mod, const std::string& nodeId, const Coord& position, const std::string& road_id, double speed, double angle, VehicleSignal signals);
+		virtual void updateModulePosition(cModule* mod, const Coord& p, const std::string& edge, double speed, double angle, VehicleSignal signals);
+
+	protected:
+
 };
 
-class VEINS_INET_API VeinsInetManagerAccess {
-public:
-    VeinsInetManager* get()
-    {
-        return FindModule<VeinsInetManager*>::findGlobalModule();
-    };
+class VeinsInetManagerAccess
+{
+	public:
+		VeinsInetManager* get() {
+			return FindModule<VeinsInetManager*>::findGlobalModule();
+		};
 };
 
-} // namespace veins
+}
+
+#endif // ifndef Veins_VeinsInetManager_h

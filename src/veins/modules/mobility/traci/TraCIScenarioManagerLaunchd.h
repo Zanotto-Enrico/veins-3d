@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,13 +18,12 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef WORLD_TRACI_TRACISCENARIOMANAGERLAUNCHD_H
+#define WORLD_TRACI_TRACISCENARIOMANAGERLAUNCHD_H
 
-#include "veins/veins.h"
+#include <omnetpp.h>
 
 #include "veins/modules/mobility/traci/TraCIScenarioManager.h"
-
-namespace veins {
 
 /**
  * @brief
@@ -45,25 +42,30 @@ namespace veins {
  * @see TraCIScenarioManager
  *
  */
-class VEINS_API TraCIScenarioManagerLaunchd : virtual public TraCIScenarioManager {
+namespace Veins {
+class TraCIScenarioManagerLaunchd : public TraCIScenarioManager
+{
 public:
-    ~TraCIScenarioManagerLaunchd() override;
-    void initialize(int stage) override;
-    void finish() override;
+
+    virtual ~TraCIScenarioManagerLaunchd();
+    virtual void initialize(int stage);
+    virtual void finish();
 
 protected:
     cXMLElement* launchConfig; /**< launch configuration to send to sumo-launchd */
     int seed; /**< seed value to set in launch configuration, if missing (-1: current run number) */
 
-    void init_traci() override;
+    virtual void init_traci();
 };
 
-class VEINS_API TraCIScenarioManagerLaunchdAccess {
+class TraCIScenarioManagerLaunchdAccess
+{
 public:
     TraCIScenarioManagerLaunchd* get()
     {
         return FindModule<TraCIScenarioManagerLaunchd*>::findGlobalModule();
     };
 };
+}
 
-} // namespace veins
+#endif

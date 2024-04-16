@@ -1,35 +1,28 @@
-#!/bin/bash
+#!/usr/bin/env python2
+run_libs = ['/usr/lib/gdal', 'src/veins']
+run_neds = ['src/veins']
 
-#
-# Copyright (C) 2020 Christoph Sommer <sommer@cms-labs.org>
-#
-# Documentation for these modules is at http://veins.car2x.org/
-#
-# SPDX-License-Identifier: GPL-2.0-or-later
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
+# ^-- contents of out/config.py go here
 
-echo "WARNING: the run script is deprecated in favor of bin/veins_run. Redirecting." >&2
-echo "WARNING: the run script is deprecated in favor of bin/veins_run. Redirecting."
+"""
+Runs Veins simulation in current directory
+"""
 
-test -f $(dirname "$0")/bin/veins_run || echo "ERROR: bin/veins_run does not exist; this will likely fail. Did you run 'make bin/veins_run'?" >&2
-test -f $(dirname "$0")/bin/veins_run || echo "ERROR: bin/veins_run does not exist; this will likely fail. Did you run 'make bin/veins_run'?"
+import sys
+import os
 
-$(dirname "$0")/bin/veins_run "$@"
+def relpath(s):
+    veins_root = os.path.dirname(os.path.realpath(__file__))
+    return os.path.relpath(os.path.join(veins_root, s), '.')
 
-echo "WARNING: the run script is deprecated in favor of bin/veins_run. Redirection done." >&2
-echo "WARNING: the run script is deprecated in favor of bin/veins_run. Redirection done."
+run_libs = [relpath(s) for s in run_libs]
+run_neds = [relpath(s) for s in run_neds] + ['.']
+
+lib_flags = ['-l%s' % s for s in run_libs]
+ned_flags = ['-n' + ';'.join(run_neds)]
+
+prefix = []
+cmdline = prefix + ['opp_run'] + lib_flags + ned_flags + sys.argv[1:]
+
+os.execvp('env', ['env'] + cmdline)
 

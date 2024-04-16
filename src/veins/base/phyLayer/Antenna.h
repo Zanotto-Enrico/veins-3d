@@ -1,30 +1,14 @@
-//
-// Copyright (C) 2016 Alexander Brummer <alexander.brummer@fau.de>
-//
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
+/*
+ * Antenna.h
+ *
+ *  Created on: Jun 13, 2016
+ *      Author: Alexander Brummer
+ */
 
-#pragma once
+#ifndef ANTENNA_H_
+#define ANTENNA_H_
 
 #include "veins/base/utils/Coord.h"
-
-namespace veins {
 
 /**
  * @brief The Antenna class is the base class of all antenna models.
@@ -38,10 +22,10 @@ namespace veins {
  *
  * @author Alexander Brummer
  */
-class VEINS_API Antenna {
+class Antenna {
 public:
-    Antenna(){};
-    virtual ~Antenna(){};
+    Antenna() {};
+    virtual ~Antenna() {};
 
     /**
      * Calculates the antenna gain of the represented antenna.
@@ -62,10 +46,9 @@ public:
      */
     virtual double getGain(Coord ownPos, Coord ownOrient, Coord otherPos);
 
-    virtual double getLastAngle()
-    {
-        return -1.0;
-    };
+    virtual double getLastAzi(){return -1.0;};
+    virtual double getLastEle(){return -1.0;};
+
 };
 
-} // namespace veins
+#endif /* ANTENNA_H_ */

@@ -1,14 +1,11 @@
 //
-// Copyright (C) 2006-2018 Christoph Sommer <sommer@ccs-labs.org>
+// ObstacleControl - models obstacles that block radio transmissions
+// Copyright (C) 2006 Christoph Sommer <christoph.sommer@informatik.uni-erlangen.de>
 //
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,55 +14,55 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 
-#pragma once
+
+#ifndef OBSTACLE_OBSTACLE_H
+#define OBSTACLE_OBSTACLE_H
 
 #include <vector>
-
-#include "veins/veins.h"
-
 #include "veins/base/utils/Coord.h"
 #include "veins/modules/world/annotations/AnnotationManager.h"
-
-namespace veins {
+#include "veins/modules/obstacle/polygonTriangulation.h"
 
 /**
  * stores information about an Obstacle for ObstacleControl
  */
-class VEINS_API Obstacle {
-public:
-    using Coords = std::vector<Coord>;
+namespace Veins {
+class Obstacle {
+	public:
+		typedef std::vector<Coord> Coords;
+		using Mesh = std::vector<Triangle>;
 
-    Obstacle(std::string id, std::string type, double attenuationPerCut, double attenuationPerMeter);
+		Obstacle(std::string id, std::string type, double attenuationPerCut, double attenuationPerMeter);
 
-    void setShape(Coords shape);
-    const Coords& getShape() const;
-    const Coord getBboxP1() const;
-    const Coord getBboxP2() const;
-    bool containsPoint(Coord Point) const;
+		void setShape(Coords shape, double height);
+		void setShape(Coords shape);
+		const Coords& getShape() const;
+		const Mesh& getMesh() const;
+    	const double getHeight() const;
+		const Coord getBboxP1() const;
+		const Coord getBboxP2() const;
 
-    std::string getType() const;
-    std::string getId() const;
-    double getAttenuationPerCut() const;
-    double getAttenuationPerMeter() const;
+		std::string getType() const;
+		std::string getId() const;
 
-    /**
-     * get a list of points (in [0, 1]) along the line between sender and receiver where the beam intersects with this obstacle
-     */
-    std::vector<double> getIntersections(const Coord& senderPos, const Coord& receiverPos) const;
+		double calculateAttenuation(const Coord& senderPos, const Coord& receiverPos, double *totalCuts, double *totalFractionInObstacle ) const;
 
-    AnnotationManager::Annotation* visualRepresentation;
+		AnnotationManager::Annotation* visualRepresentation;
 
-protected:
-    std::string id;
-    std::string type;
-    double attenuationPerCut; /**< in dB. attenuation per exterior border of obstacle */
-    double attenuationPerMeter; /**< in dB / m. to account for attenuation caused by interior of obstacle */
-    Coords coords;
-    Coord bboxP1;
-    Coord bboxP2;
+	protected:
+		std::string id;
+		std::string type;
+		double attenuationPerCut; /**< in dB. attenuation per exterior border of obstacle */
+		double attenuationPerMeter; /**< in dB / m. to account for attenuation caused by interior of obstacle */
+		Coords coords;
+		double height;
+    	Mesh mesh;
+		Coord bboxP1;
+		Coord bboxP2;
 };
+}
 
-} // namespace veins
+#endif

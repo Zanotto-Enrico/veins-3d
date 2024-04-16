@@ -36,11 +36,11 @@
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
-using namespace veins::TraCIConstants;
+using namespace Veins::TraCIConstants;
 
-namespace veins {
+namespace Veins {
 
-struct traci2omnet_functor : public unary_function<TraCICoord, Coord> {
+struct traci2omnet_functor : public std::unary_function<TraCICoord, Coord> {
     traci2omnet_functor(const TraCIConnection& owner)
         : owner(owner)
     {
@@ -109,7 +109,7 @@ TraCIConnection* TraCIConnection::connect(cComponent* owner, const char* host, i
     }
     else {
         throw cRuntimeError("Invalid TraCI server address: %s", host);
-        return nullptr;
+        return 0;
     }
 
     sockaddr_in address;
@@ -120,9 +120,10 @@ TraCIConnection* TraCIConnection::connect(cComponent* owner, const char* host, i
     address.sin_addr.s_addr = addr.s_addr;
 
     SOCKET* socketPtr = new SOCKET();
+    if (*socketPtr < 0) throw cRuntimeError("Could not create socket to connect to TraCI server");
+
     for (int tries = 1; tries <= 10; ++tries) {
         *socketPtr = ::socket(AF_INET, SOCK_STREAM, 0);
-        if (*socketPtr == INVALID_SOCKET) throw cRuntimeError("Could not create socket to connect to TraCI server");
         if (::connect(*socketPtr, address_p, sizeof(address)) >= 0) break;
         closesocket(socket(socketPtr));
 
@@ -133,7 +134,7 @@ TraCIConnection* TraCIConnection::connect(cComponent* owner, const char* host, i
         int sleepDuration = tries * .25 + 1;
 
         if (tries >= 10) {
-            throw cRuntimeError("%s", msg.c_str());
+            throw cRuntimeError(msg.c_str());
         }
         else if (tries == 3) {
             EV_WARN << msg << " -- Will retry in " << sleepDuration << " second(s)." << std::endl;
@@ -302,16 +303,16 @@ std::list<TraCICoord> TraCIConnection::omnet2traci(const std::list<Coord>& list)
     return coordinateTransformation->omnet2traci(list);
 }
 
-Heading TraCIConnection::traci2omnetHeading(double heading) const
+double TraCIConnection::traci2omnetAngle(double angle) const
 {
     ASSERT(coordinateTransformation.get());
-    return coordinateTransformation->traci2omnetHeading(heading);
+    return coordinateTransformation->traci2omnetAngle(angle);
 }
 
-double TraCIConnection::omnet2traciHeading(Heading heading) const
+double TraCIConnection::omnet2traciAngle(double angle) const
 {
     ASSERT(coordinateTransformation.get());
-    return coordinateTransformation->omnet2traciHeading(heading);
+    return coordinateTransformation->omnet2traciAngle(angle);
 }
 
-} // namespace veins
+}

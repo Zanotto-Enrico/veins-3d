@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,9 +18,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
-
-namespace veins {
+#ifndef WORLD_TRACI_TRACILAUNCHER_H
+#define WORLD_TRACI_TRACILAUNCHER_H
 
 /**
  * @brief
@@ -36,16 +33,21 @@ namespace veins {
  * @see TraCIScenarioManager
  *
  */
-class VEINS_API TraCILauncher {
-public:
-    TraCILauncher(std::string commandLine);
-    ~TraCILauncher();
+namespace Veins {
+class TraCILauncher
+{
+	public:
+		TraCILauncher(std::string commandLine);
+		~TraCILauncher();
 
-protected:
+	protected:
+
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__) || defined(_WIN64)
 #else
-    pid_t pid;
+		pid_t pid;
 #endif
-};
 
-} // namespace veins
+};
+}
+
+#endif

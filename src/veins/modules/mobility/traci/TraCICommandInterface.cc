@@ -20,31 +20,30 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#include <cstdint>
 #include <stdlib.h>
 
 #include "veins/modules/mobility/traci/TraCIBuffer.h"
-#include "veins/modules/mobility/traci/TraCIColor.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
+#include "veins/modules/mobility/traci/TraCICoord.h"
 #include "veins/modules/mobility/traci/ParBuffer.h"
 
 #ifdef _WIN32
-#define realpath(N, R) _fullpath((R), (N), _MAX_PATH)
+#define realpath(N,R) _fullpath((R),(N),_MAX_PATH)
 #endif /* _WIN32 */
 
-using namespace veins::TraCIConstants;
+using namespace Veins::TraCIConstants;
 
-namespace veins {
+namespace Veins {
 
 const std::map<uint32_t, TraCICommandInterface::VersionConfig> TraCICommandInterface::versionConfigs = {
-    {20, {20, TYPE_DOUBLE, TYPE_POLYGON, VAR_TIME}}, // since SUMO 1.2.0
-    {19, {19, TYPE_DOUBLE, TYPE_POLYGON, VAR_TIME}}, // since SUMO 1.1.0
-    {18, {18, TYPE_DOUBLE, TYPE_POLYGON, VAR_TIME}}, // since SUMO 1.0.0
-    {17, {17, TYPE_INTEGER, TYPE_BOUNDINGBOX, VAR_TIME_STEP}}, // since SUMO 0.32.0
-    {16, {16, TYPE_INTEGER, TYPE_BOUNDINGBOX, VAR_TIME_STEP}}, // since SUMO 0.31.0
-    {15, {15, TYPE_INTEGER, TYPE_BOUNDINGBOX, VAR_TIME_STEP}}, // since SUMO 0.30.0
+    {20, {20, TYPE_DOUBLE, TYPE_POLYGON, VAR_TIME}},
+    {19, {19, TYPE_DOUBLE, TYPE_POLYGON, VAR_TIME}},
+    {18, {18, TYPE_DOUBLE, TYPE_POLYGON, VAR_TIME}},
+    {17, {17, TYPE_INTEGER, TYPE_BOUNDINGBOX, VAR_TIME_STEP}},
+    {16, {16, TYPE_INTEGER, TYPE_BOUNDINGBOX, VAR_TIME_STEP}},
+    {15, {15, TYPE_INTEGER, TYPE_BOUNDINGBOX, VAR_TIME_STEP}},
 };
 
 TraCICommandInterface::TraCICommandInterface(cComponent* owner, TraCIConnection& c, bool ignoreGuiCommands)
@@ -90,7 +89,7 @@ void TraCICommandInterface::setApiVersion(uint32_t apiVersion)
         TraCIBuffer::setTimeType(versionConfig.timeType);
     }
     catch (std::out_of_range const& exc) {
-        throw cRuntimeError("%s", std::string("TraCI server reports unsupported TraCI API version: " + std::to_string(apiVersion) + ". We recommend using Sumo version 1.0.1 or 0.32.0").c_str());
+        throw cRuntimeError(std::string("TraCI server reports unsupported TraCI API version: " + std::to_string(apiVersion) + ". We recommend using Sumo version 1.0.1 or 0.32.0").c_str());
     }
 }
 
@@ -252,21 +251,6 @@ std::list<std::string> TraCICommandInterface::getRouteIds()
     return genericGetStringList(CMD_GET_ROUTE_VARIABLE, "", ID_LIST, RESPONSE_GET_ROUTE_VARIABLE);
 }
 
-void TraCICommandInterface::addRoute(std::string routeId, const std::list<std::string>& edges)
-{
-    TraCIBuffer p;
-    p << static_cast<uint8_t>(ADD);
-    p << routeId;
-    p << static_cast<uint8_t>(TYPE_STRINGLIST);
-    p << static_cast<int32_t>(edges.size());
-    for (const std::string& edge : edges) {
-        p << edge;
-    }
-
-    TraCIBuffer buf = connection.query(CMD_SET_ROUTE_VARIABLE, p);
-    ASSERT(buf.eof());
-}
-
 std::list<std::string> TraCICommandInterface::getRoadIds()
 {
     return genericGetStringList(CMD_GET_EDGE_VARIABLE, "", ID_LIST, RESPONSE_GET_EDGE_VARIABLE);
@@ -284,16 +268,50 @@ double TraCICommandInterface::Road::getMeanSpeed()
 
 std::string TraCICommandInterface::Road::getName()
 {
-    const auto apiVersion = traci->versionConfig.version;
-    if (apiVersion <= 18) {
-        throw cRuntimeError("TraCICommandInterface::Road::getName requires SUMO 1.1.0 or newer");
-    }
     return traci->genericGetString(CMD_GET_EDGE_VARIABLE, roadId, VAR_NAME, RESPONSE_GET_EDGE_VARIABLE);
+}
+
+std::string TraCICommandInterface::Road::getType()
+{
+    return traci->genericGetString(CMD_GET_EDGE_VARIABLE, roadId, VAR_TYPE, RESPONSE_GET_EDGE_VARIABLE);
+}
+
+void TraCICommandInterface::Road::getParameter(const std::string& parameter, double& value)
+{
+    std::string v;
+    getParameter(parameter, v);
+    ParBuffer buf(v);
+    buf >> value;
+}
+
+void TraCICommandInterface::Road::getParameter(const std::string& parameter, std::string& value)
+{
+    TraCIBuffer response = traci->connection.query(CMD_GET_EDGE_VARIABLE, TraCIBuffer() << static_cast<uint8_t>(VAR_PARAMETER) << roadId << static_cast<uint8_t>(TYPE_STRING) << parameter);
+    uint8_t cmdLength;
+    response >> cmdLength;
+    uint8_t responseId;
+    response >> responseId;
+    ASSERT(responseId == RESPONSE_GET_EDGE_VARIABLE);
+    uint8_t variable;
+    response >> variable;
+    ASSERT(variable == VAR_PARAMETER);
+    std::string id;
+    response >> id;
+    ASSERT(id == roadId);
+    uint8_t type;
+    response >> type;
+    ASSERT(type == TYPE_STRING);
+    response >> value;
 }
 
 std::string TraCICommandInterface::Vehicle::getRoadId()
 {
     return traci->genericGetString(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_ROAD_ID, RESPONSE_GET_VEHICLE_VARIABLE);
+}
+
+std::string TraCICommandInterface::Vehicle::getCurrentRoadOnRoute()
+{
+    return traci->genericGetString(CMD_GET_VEHICLE_VARIABLE, nodeId, LANE_EDGE_ID, RESPONSE_GET_VEHICLE_VARIABLE);
 }
 
 std::string TraCICommandInterface::Vehicle::getLaneId()
@@ -466,66 +484,6 @@ double TraCICommandInterface::Vehicle::getAccumulatedWaitingTime() const
     return traci->genericGetDouble(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_WAITING_TIME_ACCUMULATED, RESPONSE_GET_VEHICLE_VARIABLE);
 }
 
-uint8_t TraCICommandInterface::Vehicle::getStopState() const
-{
-    const auto apiVersion = traci->versionConfig.version;
-    if (apiVersion < 18) {
-        return traci->genericGetUnsignedByte(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_STOPSTATE, RESPONSE_GET_VEHICLE_VARIABLE);
-    }
-    else {
-        return traci->genericGetInt(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_STOPSTATE, RESPONSE_GET_VEHICLE_VARIABLE);
-    }
-}
-
-bool TraCICommandInterface::Vehicle::isStopReached() const
-{
-    return getStopState() & 0x1;
-}
-
-void TraCICommandInterface::Vehicle::changeTarget(const std::string& newTarget) const
-{
-    TraCIBuffer p;
-    p << static_cast<uint8_t>(CMD_CHANGETARGET);
-    p << nodeId;
-    p << static_cast<uint8_t>(TYPE_STRING);
-    p << newTarget;
-
-    TraCIBuffer buf = traci->connection.query(CMD_SET_VEHICLE_VARIABLE, p);
-    ASSERT(buf.eof());
-}
-
-double TraCICommandInterface::getDistanceRoad(std::string e1, double p1, std::string e2, double p2, bool returnDrivingDistance)
-{
-    uint8_t variable = DISTANCE_REQUEST;
-    std::string simId = "sim0";
-    uint8_t variableType = TYPE_COMPOUND;
-    int32_t count = 3;
-    uint8_t dType = static_cast<uint8_t>(returnDrivingDistance ? REQUEST_DRIVINGDIST : REQUEST_AIRDIST);
-
-    TraCIBuffer buf = connection.query(CMD_GET_SIM_VARIABLE, TraCIBuffer() << variable << simId << variableType << count << static_cast<uint8_t>(POSITION_ROADMAP) << e1 << p1 << static_cast<uint8_t>(0) << static_cast<uint8_t>(POSITION_ROADMAP) << e2 << p2 << static_cast<uint8_t>(0) << dType);
-
-    uint8_t cmdLength_resp;
-    buf >> cmdLength_resp;
-    uint8_t commandId_resp;
-    buf >> commandId_resp;
-    ASSERT(commandId_resp == RESPONSE_GET_SIM_VARIABLE);
-    uint8_t variableId_resp;
-    buf >> variableId_resp;
-    ASSERT(variableId_resp == variable);
-    std::string simId_resp;
-    buf >> simId_resp;
-    ASSERT(simId_resp == simId);
-    uint8_t typeId_resp;
-    buf >> typeId_resp;
-    ASSERT(typeId_resp == TYPE_DOUBLE);
-    double distance;
-    buf >> distance;
-
-    ASSERT(buf.eof());
-
-    return distance;
-}
-
 double TraCICommandInterface::getDistance(const Coord& p1, const Coord& p2, bool returnDrivingDistance)
 {
     uint8_t variable = DISTANCE_REQUEST;
@@ -620,81 +578,6 @@ std::pair<std::string, double> TraCICommandInterface::Vehicle::getLeader(const d
     ASSERT(response.eof());
 
     return std::make_pair(leaderId, distanceToLeader);
-}
-
-std::vector<std::tuple<std::string, int, double, char>> TraCICommandInterface::Vehicle::getNextTls()
-{
-    std::vector<std::tuple<std::string, int, double, char>> result;
-
-    TraCIBuffer request = TraCIBuffer() << VAR_NEXT_TLS << nodeId;
-    TraCIBuffer response = connection->query(CMD_GET_VEHICLE_VARIABLE, request);
-
-    uint8_t cmdLength;
-    response >> cmdLength;
-    if (cmdLength == 0) {
-        uint32_t cmdLengthX;
-        response >> cmdLengthX;
-    }
-    uint8_t responseId;
-    response >> responseId;
-    ASSERT(responseId == RESPONSE_GET_VEHICLE_VARIABLE);
-    uint8_t variableType;
-    response >> variableType;
-    ASSERT(variableType == VAR_NEXT_TLS);
-    std::string rspNodeId;
-    response >> rspNodeId;
-    ASSERT(strcmp(rspNodeId.c_str(), nodeId.c_str()) == 0);
-    uint8_t responseType;
-    response >> responseType;
-    ASSERT(responseType == TYPE_COMPOUND);
-    uint32_t numElements;
-    response >> numElements;
-    ASSERT((numElements - 1) % 4 == 0);
-
-    uint8_t numLinksType;
-    response >> numLinksType;
-    ASSERT(numLinksType == TYPE_INTEGER);
-
-    uint32_t numLinks;
-    response >> numLinks;
-    ASSERT(numLinks * 4 + 1 == numElements);
-
-    for (int i = 0; i < numLinks; ++i) {
-        uint8_t tlsIdType;
-        response >> tlsIdType;
-        ASSERT(tlsIdType == TYPE_STRING);
-        std::string tlsId;
-        response >> tlsId;
-
-        uint8_t tlsLinkIndexType;
-        response >> tlsLinkIndexType;
-        ASSERT(tlsLinkIndexType == TYPE_INTEGER);
-        int tlsLinkIndex;
-        response >> tlsLinkIndex;
-
-        uint8_t distanceToTlsType;
-        response >> distanceToTlsType;
-        ASSERT(distanceToTlsType == TYPE_DOUBLE);
-        double distanceToTls;
-        response >> distanceToTls;
-
-        uint8_t linkStateType;
-        response >> linkStateType;
-        ASSERT(linkStateType == TYPE_BYTE);
-        uint8_t linkState;
-        response >> linkState;
-
-        result.push_back(std::make_tuple(tlsId, tlsLinkIndex, distanceToTls, linkState));
-    }
-
-    ASSERT(response.eof());
-
-    return result;
-}
-
-double TraCICommandInterface::Vehicle::getSlope()
-{
-    return traci->genericGetDouble(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_SLOPE, RESPONSE_GET_VEHICLE_VARIABLE);
 }
 
 std::list<std::string> TraCICommandInterface::getTrafficlightIds()
@@ -1059,56 +942,9 @@ std::list<Coord> TraCICommandInterface::Polygon::getShape()
     return traci->genericGetCoordList(CMD_GET_POLYGON_VARIABLE, polyId, VAR_SHAPE, RESPONSE_GET_POLYGON_VARIABLE);
 }
 
-TraCIColor TraCICommandInterface::Polygon::getColor()
+double TraCICommandInterface::Polygon::getLayer()
 {
-    TraCIColor res(0, 0, 0, 0);
-
-    TraCIBuffer p;
-    p << static_cast<uint8_t>(VAR_COLOR);
-    p << polyId;
-    TraCIBuffer buf = connection->query(CMD_GET_POLYGON_VARIABLE, p);
-
-    uint8_t cmdLength;
-    buf >> cmdLength;
-    if (cmdLength == 0) {
-        uint32_t cmdLengthX;
-        buf >> cmdLengthX;
-    }
-    uint8_t commandId_r;
-    buf >> commandId_r;
-    uint8_t responseId = RESPONSE_GET_POLYGON_VARIABLE;
-    ASSERT(commandId_r == responseId);
-    uint8_t varId;
-    buf >> varId;
-    uint8_t variableId = VAR_COLOR;
-    ASSERT(varId == variableId);
-    std::string objectId_r;
-    buf >> objectId_r;
-    std::string objectId = polyId;
-    ASSERT(objectId_r == objectId);
-    uint8_t resType_r;
-    buf >> resType_r;
-    uint8_t resultTypeId = TYPE_COLOR;
-    ASSERT(resType_r == resultTypeId);
-    buf >> res.red;
-    buf >> res.green;
-    buf >> res.blue;
-    buf >> res.alpha;
-
-    ASSERT(buf.eof());
-
-    return res;
-}
-
-bool TraCICommandInterface::Polygon::getFilled()
-{
-    int32_t i = traci->genericGetInt(CMD_GET_POLYGON_VARIABLE, polyId, VAR_FILL, RESPONSE_GET_POLYGON_VARIABLE);
-    return (i == 1);
-}
-
-double TraCICommandInterface::Polygon::getLineWidth()
-{
-    return traci->genericGetDouble(CMD_GET_POLYGON_VARIABLE, polyId, VAR_WIDTH, RESPONSE_GET_POLYGON_VARIABLE);
+    return traci->genericGetDouble(CMD_GET_POLYGON_VARIABLE, polyId, VAR_HEIGHT, RESPONSE_GET_POLYGON_VARIABLE);
 }
 
 void TraCICommandInterface::Polygon::setShape(const std::list<Coord>& points)
@@ -1134,8 +970,7 @@ void TraCICommandInterface::addPolygon(std::string polyId, std::string polyType,
     p << static_cast<uint8_t>(TYPE_COLOR) << color.red << color.green << color.blue << color.alpha;
     p << static_cast<uint8_t>(TYPE_UBYTE) << static_cast<uint8_t>(filled);
     p << static_cast<uint8_t>(TYPE_INTEGER) << layer;
-    p << static_cast<uint8_t>(TYPE_POLYGON);
-    p.writeByteOrFull<uint32_t>(points.size());
+    p << static_cast<uint8_t>(TYPE_POLYGON) << static_cast<uint8_t>(points.size());
     for (std::list<Coord>::const_iterator i = points.begin(); i != points.end(); ++i) {
         const TraCICoord& pos = connection.omnet2traci(*i);
         p << static_cast<double>(pos.x) << static_cast<double>(pos.y);
@@ -1202,72 +1037,6 @@ std::list<std::string> TraCICommandInterface::getLaneIds()
     return genericGetStringList(CMD_GET_LANE_VARIABLE, "", ID_LIST, RESPONSE_GET_LANE_VARIABLE);
 }
 
-std::list<TraCICommandInterface::Lane::Link> TraCICommandInterface::Lane::getLinks()
-{
-    uint8_t variableId = LANE_LINKS;
-    TraCIBuffer buf;
-    buf << variableId << laneId;
-    TraCIBuffer obuf = connection->query(CMD_GET_LANE_VARIABLE, buf);
-
-    uint8_t cmdLength;
-    obuf >> cmdLength;
-    if (cmdLength == 0) {
-        uint32_t cmdLengthX;
-        obuf >> cmdLengthX;
-    }
-    uint8_t commandId_r;
-    obuf >> commandId_r;
-    ASSERT(commandId_r == RESPONSE_GET_LANE_VARIABLE);
-    uint8_t varId;
-    obuf >> varId;
-    ASSERT(varId == variableId);
-    std::string objectId_r;
-    obuf >> objectId_r;
-    ASSERT(objectId_r == laneId);
-    uint8_t resType_r;
-    obuf >> resType_r;
-    ASSERT(resType_r == TYPE_COMPOUND);
-
-    int32_t cnt;
-    obuf >> cnt;
-
-    std::list<TraCICommandInterface::Lane::Link> links;
-    obuf >> resType_r;
-    ASSERT(resType_r == TYPE_INTEGER);
-    int32_t linkCount;
-    obuf >> linkCount;
-
-    for (int32_t i = 0; i < linkCount; ++i) {
-        TraCICommandInterface::Lane::Link link;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_STRING);
-        obuf >> link.approachedLane;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_STRING);
-        obuf >> link.approachedInternal;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_UBYTE);
-        obuf >> link.hasPrio;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_UBYTE);
-        obuf >> link.isOpen;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_UBYTE);
-        obuf >> link.hasFoe;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_STRING);
-        obuf >> link.state;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_STRING);
-        obuf >> link.direction;
-        obuf >> resType_r;
-        ASSERT(resType_r == TYPE_DOUBLE);
-        obuf >> link.length;
-        links.push_back(link);
-    }
-    return links;
-}
-
 std::list<Coord> TraCICommandInterface::Lane::getShape()
 {
     return traci->genericGetCoordList(CMD_GET_LANE_VARIABLE, laneId, VAR_SHAPE, RESPONSE_GET_LANE_VARIABLE);
@@ -1283,6 +1052,11 @@ double TraCICommandInterface::Lane::getLength()
     return traci->genericGetDouble(CMD_GET_LANE_VARIABLE, laneId, VAR_LENGTH, RESPONSE_GET_LANE_VARIABLE);
 }
 
+double TraCICommandInterface::Lane::getWidth()
+{
+    return traci->genericGetDouble(CMD_GET_LANE_VARIABLE, laneId, VAR_WIDTH, RESPONSE_GET_LANE_VARIABLE);
+}
+
 double TraCICommandInterface::Lane::getMaxSpeed()
 {
     return traci->genericGetDouble(CMD_GET_LANE_VARIABLE, laneId, VAR_MAXSPEED, RESPONSE_GET_LANE_VARIABLE);
@@ -1293,11 +1067,6 @@ double TraCICommandInterface::Lane::getMeanSpeed()
     return traci->genericGetDouble(CMD_GET_LANE_VARIABLE, laneId, LAST_STEP_MEAN_SPEED, RESPONSE_GET_LANE_VARIABLE);
 }
 
-double TraCICommandInterface::Lane::getWidth()
-{
-    return traci->genericGetDouble(CMD_GET_LANE_VARIABLE, laneId, VAR_WIDTH, RESPONSE_GET_LANE_VARIABLE);
-}
-
 void TraCICommandInterface::Lane::setDisallowed(std::list<std::string> disallowedClasses)
 {
     uint8_t variableId = LANE_DISALLOWED;
@@ -1306,23 +1075,6 @@ void TraCICommandInterface::Lane::setDisallowed(std::list<std::string> disallowe
     buf << variableId << laneId << variableType << disallowedClasses;
     TraCIBuffer obuf = connection->query(CMD_SET_LANE_VARIABLE, buf);
     ASSERT(obuf.eof());
-}
-
-std::list<std::string> TraCICommandInterface::Lane::getAllowed() const
-{
-    return traci->genericGetStringList(CMD_GET_LANE_VARIABLE, laneId, LANE_ALLOWED, RESPONSE_GET_LANE_VARIABLE);
-}
-
-std::list<std::string> TraCICommandInterface::Lane::getDisallowed() const
-{
-    return traci->genericGetStringList(CMD_GET_LANE_VARIABLE, laneId, LANE_DISALLOWED, RESPONSE_GET_LANE_VARIABLE);
-}
-
-std::list<std::string> TraCICommandInterface::Lane::getChangePermissions(int8_t direction) const
-{
-    ASSERT((direction == LANECHANGE_LEFT) || (direction == LANECHANGE_RIGHT));
-    TraCIBuffer buf2 = TraCIBuffer() << (uint8_t) TYPE_BYTE << direction;
-    return traci->genericGetStringList(CMD_GET_LANE_VARIABLE, laneId, LANE_CHANGES, RESPONSE_GET_LANE_VARIABLE, nullptr, &buf2);
 }
 
 std::list<std::string> TraCICommandInterface::getLaneAreaDetectorIds()
@@ -1348,6 +1100,26 @@ Coord TraCICommandInterface::Junction::getPosition()
 std::list<Coord> TraCICommandInterface::Junction::getShape()
 {
     return traci->genericGetCoordList(CMD_GET_JUNCTION_VARIABLE, junctionId, VAR_SHAPE, RESPONSE_GET_JUNCTION_VARIABLE);
+}
+
+void TraCICommandInterface::Junction::getParameter(const std::string& parameter, std::string& value)
+{
+    TraCIBuffer response = traci->connection.query(CMD_GET_JUNCTION_VARIABLE, TraCIBuffer() << static_cast<uint8_t>(VAR_PARAMETER) << junctionId << static_cast<uint8_t>(TYPE_STRING) << parameter);
+    uint8_t cmdLength;
+    response >> cmdLength;
+    uint8_t responseId;
+    response >> responseId;
+    ASSERT(responseId == RESPONSE_GET_JUNCTION_VARIABLE);
+    uint8_t variable;
+    response >> variable;
+    ASSERT(variable == VAR_PARAMETER);
+    std::string id;
+    response >> id;
+    ASSERT(id == junctionId);
+    uint8_t type;
+    response >> type;
+    ASSERT(type == TYPE_STRING);
+    response >> value;
 }
 
 bool TraCICommandInterface::addVehicle(std::string vehicleId, std::string vehicleTypeId, std::string routeId, simtime_t emitTime_st, double emitPosition, double emitSpeed, int8_t emitLane)
@@ -1466,15 +1238,6 @@ std::pair<double, double> TraCICommandInterface::getLonLat(const Coord& coord)
     return std::make_pair(convPosLon, convPosLat);
 }
 
-void TraCICommandInterface::setOrder(int32_t order)
-{
-    uint8_t variableId = 0x03;
-    uint8_t variableType = TYPE_COMPOUND;
-    int32_t count = 2;
-    TraCIBuffer buf = connection.query(CMD_SETORDER, TraCIBuffer() << variableId << variableType << count << order);
-    ASSERT(buf.eof());
-}
-
 std::tuple<std::string, double, uint8_t> TraCICommandInterface::getRoadMapPos(const Coord& coord)
 {
     TraCIBuffer request;
@@ -1510,26 +1273,6 @@ std::tuple<std::string, double, uint8_t> TraCICommandInterface::getRoadMapPos(co
     response >> convLaneId;
 
     return std::make_tuple(convRoadId, convPos, convLaneId);
-}
-
-double TraCICommandInterface::VehicleType::getMaxSpeed()
-{
-    return traci->getVehicleTypeMaxSpeed(typeId);
-}
-
-std::string TraCICommandInterface::VehicleType::getVehicleClass()
-{
-    return traci->genericGetString(CMD_GET_VEHICLETYPE_VARIABLE, typeId, VAR_VEHICLECLASS, RESPONSE_GET_VEHICLETYPE_VARIABLE);
-}
-
-std::string TraCICommandInterface::VehicleType::getShapeClass()
-{
-    return traci->genericGetString(CMD_GET_VEHICLETYPE_VARIABLE, typeId, VAR_SHAPECLASS, RESPONSE_GET_VEHICLETYPE_VARIABLE);
-}
-
-void TraCICommandInterface::VehicleType::setMaxSpeed(double maxSpeed)
-{
-    traci->setVehicleTypeMaxSpeed(typeId, maxSpeed);
 }
 
 std::list<std::string> TraCICommandInterface::getGuiViewIds()
@@ -1607,7 +1350,7 @@ void TraCICommandInterface::GuiView::takeScreenshot(std::string filename, int32_
     if (filename == "") {
         // get absolute path of results/ directory
         const char* myResultsDir = cSimulation::getActiveSimulation()->getEnvir()->getConfigEx()->getVariable(CFGVAR_RESULTDIR);
-        char* s = realpath(myResultsDir, nullptr);
+        char* s = realpath(myResultsDir, 0);
         std::string absolutePath = s;
         free(s);
 
@@ -1621,7 +1364,7 @@ void TraCICommandInterface::GuiView::takeScreenshot(std::string filename, int32_
     }
 
     const auto apiVersion = traci->versionConfig.version;
-    if (apiVersion == 18 || apiVersion == 19 || apiVersion == 20) {
+    if (apiVersion == 15 || apiVersion == 16 || apiVersion == 17) {
         uint8_t variableType = TYPE_COMPOUND;
         int32_t count = 3;
         uint8_t filenameType = TYPE_STRING;
@@ -1630,7 +1373,7 @@ void TraCICommandInterface::GuiView::takeScreenshot(std::string filename, int32_
         TraCIBuffer buf = connection->query(CMD_SET_GUI_VARIABLE, TraCIBuffer() << static_cast<uint8_t>(VAR_SCREENSHOT) << viewId << variableType << count << filenameType << filename << widthType << width << heightType << height);
         ASSERT(buf.eof());
     }
-    else if (apiVersion == 15 || apiVersion == 16 || apiVersion == 17) {
+    else if (apiVersion == 18 || apiVersion == 19 || apiVersion == 20) {
         uint8_t filenameType = TYPE_STRING;
         TraCIBuffer buf = connection->query(CMD_SET_GUI_VARIABLE, TraCIBuffer() << static_cast<uint8_t>(VAR_SCREENSHOT) << viewId << filenameType << filename);
         ASSERT(buf.eof());
@@ -1805,43 +1548,6 @@ simtime_t TraCICommandInterface::genericGetTime(uint8_t commandId, std::string o
     return res;
 }
 
-uint8_t TraCICommandInterface::genericGetUnsignedByte(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result)
-{
-
-    uint8_t resultTypeId = TYPE_UBYTE;
-    int8_t res;
-
-    TraCIBuffer buf = connection.query(commandId, TraCIBuffer() << variableId << objectId, result);
-
-    if ((result != nullptr) && (!result->success)) {
-        return 0;
-    }
-
-    uint8_t cmdLength;
-    buf >> cmdLength;
-    if (cmdLength == 0) {
-        uint32_t cmdLengthX;
-        buf >> cmdLengthX;
-    }
-    uint8_t commandId_r;
-    buf >> commandId_r;
-    ASSERT(commandId_r == responseId);
-    uint8_t varId;
-    buf >> varId;
-    ASSERT(varId == variableId);
-    std::string objectId_r;
-    buf >> objectId_r;
-    ASSERT(objectId_r == objectId);
-    uint8_t resType_r;
-    buf >> resType_r;
-    ASSERT(resType_r == resultTypeId);
-    buf >> res;
-
-    ASSERT(buf.eof());
-
-    return res;
-}
-
 int32_t TraCICommandInterface::genericGetInt(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result)
 {
 
@@ -1879,20 +1585,13 @@ int32_t TraCICommandInterface::genericGetInt(uint8_t commandId, std::string obje
     return res;
 }
 
-std::list<std::string> TraCICommandInterface::genericGetStringList(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result, const TraCIBuffer* buf3)
+std::list<std::string> TraCICommandInterface::genericGetStringList(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result)
 {
+
     uint8_t resultTypeId = TYPE_STRINGLIST;
     std::list<std::string> res;
 
-    TraCIBuffer buf2 = TraCIBuffer() << variableId << objectId;
-
-    if (buf3) {
-        std::string buf2_str = buf2.str();
-        std::string buf3_str = buf3->str();
-        buf2 = TraCIBuffer(buf2_str + buf3_str);
-    }
-
-    TraCIBuffer buf = connection.query(commandId, buf2, result);
+    TraCIBuffer buf = connection.query(commandId, TraCIBuffer() << variableId << objectId, result);
 
     if ((result != nullptr) && (!result->success)) {
         return res;
@@ -1959,13 +1658,16 @@ std::list<Coord> TraCICommandInterface::genericGetCoordList(uint8_t commandId, s
     uint8_t resType_r;
     buf >> resType_r;
     ASSERT(resType_r == resultTypeId);
-    uint32_t count = buf.readByteOrFull<uint32_t>();
+    uint8_t count;
+    buf >> count;
     for (uint32_t i = 0; i < count; i++) {
         double x;
         buf >> x;
         double y;
         buf >> y;
-        res.push_back(connection.traci2omnet(TraCICoord(x, y)));
+        double z;
+        buf >> z;
+        res.push_back(connection.traci2omnet(TraCICoord(x, y, z)));
     }
 
     ASSERT(buf.eof());
@@ -1978,4 +1680,4 @@ std::string TraCICommandInterface::Vehicle::getVType()
     return traci->genericGetString(CMD_GET_VEHICLE_VARIABLE, nodeId, VAR_TYPE, RESPONSE_GET_VEHICLE_VARIABLE);
 }
 
-} // namespace veins
+}

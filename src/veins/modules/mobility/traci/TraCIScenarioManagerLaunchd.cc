@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -23,26 +21,19 @@
 #include "veins/modules/mobility/traci/TraCIScenarioManagerLaunchd.h"
 #include "veins/modules/mobility/traci/TraCICommandInterface.h"
 #include "veins/modules/mobility/traci/TraCIConstants.h"
+#define CMD_FILE_SEND 0x75
 
 #include <sstream>
 #include <iostream>
 #include <fstream>
 
-namespace veins {
+#define MYDEBUG EV
 
-namespace TraCIConstants {
+using namespace Veins::TraCIConstants;
 
-const uint8_t CMD_FILE_SEND = 0x75;
+using Veins::TraCIScenarioManagerLaunchd;
 
-} // namespace TraCIConstants
-
-} // namespace veins
-
-using namespace veins::TraCIConstants;
-
-using veins::TraCIScenarioManagerLaunchd;
-
-Define_Module(veins::TraCIScenarioManagerLaunchd);
+Define_Module(Veins::TraCIScenarioManagerLaunchd);
 
 TraCIScenarioManagerLaunchd::~TraCIScenarioManagerLaunchd()
 {
@@ -93,7 +84,7 @@ void TraCIScenarioManagerLaunchd::init_traci()
         std::string serverVersion = version.second;
 
         if (apiVersion == 1) {
-            EV_DEBUG << "TraCI server \"" << serverVersion << "\" reports API version " << apiVersion << endl;
+            MYDEBUG << "TraCI server \"" << serverVersion << "\" reports API version " << apiVersion << endl;
         }
         else {
             throw cRuntimeError("TraCI server \"%s\" reports API version %d, which is unsupported. We recommend using the version of sumo-launchd that ships with Veins.", serverVersion.c_str(), apiVersion);

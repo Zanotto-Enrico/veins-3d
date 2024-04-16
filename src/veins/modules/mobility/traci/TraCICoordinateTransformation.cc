@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,42 +18,44 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#include "veins/modules/mobility/traci/TraCICoordinateTransformation.h"
+#include <veins/modules/mobility/traci/TraCICoordinateTransformation.h>
 
-namespace veins {
+namespace Veins {
 
 using OmnetCoord = TraCICoordinateTransformation::OmnetCoord;
 using OmnetCoordList = TraCICoordinateTransformation::OmnetCoordList;
 using TraCICoordList = TraCICoordinateTransformation::TraCICoordList;
-using OmnetHeading = TraCICoordinateTransformation::OmnetHeading;
-using TraCIHeading = TraCICoordinateTransformation::TraCIHeading;
+using Angle = TraCICoordinateTransformation::Angle;
 
 TraCICoordinateTransformation::TraCICoordinateTransformation(TraCICoord topleft, TraCICoord bottomright, float margin)
-    : dimensions({bottomright.x - topleft.x, bottomright.y - topleft.y})
+    : dimensions( {bottomright.x - topleft.x, bottomright.y - topleft.y} )
     , topleft(topleft)
     , bottomright(bottomright)
     , margin(margin)
-{
-}
+{}
 
 TraCICoord TraCICoordinateTransformation::omnet2traci(const OmnetCoord& coord) const
 {
-    return {coord.x + topleft.x - margin, dimensions.y - (coord.y - topleft.y) + margin};
+    return {
+        coord.x + topleft.x - margin,
+        dimensions.y - (coord.y - topleft.y) + margin,
+        coord.z
+    };
 }
 
 TraCICoordList TraCICoordinateTransformation::omnet2traci(const OmnetCoordList& coords) const
 {
     TraCICoordList result;
-    for (auto&& coord : coords) {
+    for(auto&& coord : coords) {
         result.push_back(omnet2traci(coord));
     }
     return result;
 }
 
-TraCIHeading TraCICoordinateTransformation::omnet2traciHeading(OmnetHeading o) const
+Angle TraCICoordinateTransformation::omnet2traciAngle(Angle angle) const
 {
     // convert to degrees
-    auto angle = o.getRad() * 180 / M_PI;
+    angle = angle * 180 / M_PI;
 
     // rotate angle
     angle = 90 - angle;
@@ -73,22 +73,26 @@ TraCIHeading TraCICoordinateTransformation::omnet2traciHeading(OmnetHeading o) c
 
 OmnetCoord TraCICoordinateTransformation::traci2omnet(const TraCICoord& coord) const
 {
-    return {coord.x - topleft.x + margin, dimensions.y - (coord.y - topleft.y) + margin};
+    return {
+        coord.x - topleft.x + margin,
+        dimensions.y - (coord.y - topleft.y) + margin,
+        coord.z
+    };
 }
 
 OmnetCoordList TraCICoordinateTransformation::traci2omnet(const TraCICoordList& coords) const
 {
     OmnetCoordList result;
-    for (auto&& coord : coords) {
+    for(auto&& coord : coords) {
         result.push_back(traci2omnet(coord));
     }
     return result;
 }
 
-OmnetHeading TraCICoordinateTransformation::traci2omnetHeading(TraCIHeading o) const
+Angle TraCICoordinateTransformation::traci2omnetAngle(Angle angle) const
 {
     // rotate angle
-    auto angle = 90 - o;
+    angle = 90 - angle;
 
     // convert to rad
     angle = angle * M_PI / 180.0;
@@ -101,7 +105,7 @@ OmnetHeading TraCICoordinateTransformation::traci2omnetHeading(TraCIHeading o) c
         angle -= 2 * M_PI;
     }
 
-    return OmnetHeading(angle);
+    return angle;
 }
 
-} // end namespace veins
+} // end namespace Veins

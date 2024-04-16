@@ -1,48 +1,60 @@
-//
-// Copyright (C) 2006-2018 Christoph Sommer <sommer@ccs-labs.org>
-//
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
-
 #include "veins/modules/analogueModel/SimpleObstacleShadowing.h"
 
-using namespace veins;
+using Veins::AirFrame;
 
-using veins::AirFrame;
+#define debugEV EV << "PhyLayer(SimpleObstacleShadowing): "
 
-SimpleObstacleShadowing::SimpleObstacleShadowing(cComponent* owner, ObstacleControl& obstacleControl, bool useTorus, const Coord& playgroundSize)
-    : AnalogueModel(owner)
-    , obstacleControl(obstacleControl)
-    , useTorus(useTorus)
-    , playgroundSize(playgroundSize)
+#if 0
+SimplePathlossConstMapping::SimplePathlossConstMapping(const DimensionSet& dimensions,
+													   SimpleObstacleShadowing* model,
+													   const double distFactor) :
+	SimpleConstMapping(dimensions),
+	distFactor(distFactor),
+	model(model),
+	hasFrequency(dimensions.hasDimension(Dimension::frequency_static()))
 {
-    if (useTorus) throw cRuntimeError("SimpleObstacleShadowing does not work on torus-shaped playgrounds");
 }
 
-void SimpleObstacleShadowing::filterSignal(Signal* signal)
+double SimplePathlossConstMapping::getValue(const Argument& pos) const
 {
-    auto senderPos = signal->getSenderPoa().pos.getPositionAt();
-    auto receiverPos = signal->getReceiverPoa().pos.getPositionAt();
+	double freq = model->carrierFrequency;
+	if(hasFrequency) {
+		assert(pos.hasArgVal(Dimension::frequency()));
+		freq = pos.getArgValue(Dimension::frequency());
+	}
+	double wavelength = BaseWorldUtility::speedOfLight() / freq;
+	return (wavelength * wavelength) * distFactor;
+}
+#endif
 
-    double factor = obstacleControl.calculateAttenuation(senderPos, receiverPos);
 
-    EV_TRACE << "value is: " << factor << endl;
+SimpleObstacleShadowing::SimpleObstacleShadowing(ObstacleControl& obstacleControl, double carrierFrequency, bool useTorus, const Coord& playgroundSize, bool debug) :
+	obstacleControl(obstacleControl),
+	carrierFrequency(carrierFrequency),
+	useTorus(useTorus),
+	playgroundSize(playgroundSize),
+	debug(debug)
+{
+	if (useTorus) throw cRuntimeError("SimpleObstacleShadowing does not work on torus-shaped playgrounds");
+}
 
-    *signal *= factor;
+
+void SimpleObstacleShadowing::filterSignal(AirFrame *frame, const Coord& senderPos, const Coord& receiverPos) {
+	Signal& s = frame->getSignal();
+	bool hasFrequency = s.getTransmissionPower()->getDimensionSet().hasDimension(Dimension::frequency());
+	const DimensionSet& domain = hasFrequency ? DimensionSet::timeFreqDomain() : DimensionSet::timeDomain();
+
+	SignalStats stats = calcAttenuation(senderPos, receiverPos);
+
+	ConstantSimpleConstMapping* attMapping = new ConstantSimpleConstMapping(domain, stats.factor);
+	s.addAttenuation(attMapping);
+	s.setStats(stats);
+}
+
+
+
+SignalStats SimpleObstacleShadowing::calcAttenuation(const Coord& senderPos, const Coord& receiverPos, bool inner) {
+	SignalStats stats = obstacleControl.calculateAttenuation(senderPos, receiverPos);
+	EV_TRACE << "value is: " << stats.factor << endl;
+	return stats;
 }

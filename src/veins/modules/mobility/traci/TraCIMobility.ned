@@ -40,12 +40,12 @@ import org.car2x.veins.base.modules.BaseMobility;
 simple TraCIMobility extends BaseMobility
 {
     parameters:
-        @class(veins::TraCIMobility);
-        @signal[org_car2x_veins_modules_mobility_collision](type=bool);
-        @signal[org_car2x_veins_modules_mobility_parkingStateChanged](type=veins::TraCIMobility);
+        @class(Veins::TraCIMobility);
+        @signal[parkingStateChanged](type=Veins::TraCIMobility);
         @display("i=block/cogwheel");
-        double hostPositionOffset @unit("m") = default(0.0m);  // shift OMNeT++ module this far from front of the car
-        bool setHostSpeed = default(false);  // whether to update the speed of the host (along with its position)
+        bool debug = default(false);  // debug switch
+        double antennaPositionOffset @unit("m") = default(0.0m);  // position offset of the antenna of the front of the car
+        double antennaHeight @unit("m") = default(1.6m);  // height of the antenna above the ground
         int accidentCount = default(0);  // number of accidents
         double accidentStart @unit("s") = default(uniform(30s,60s));  // time until first accident, relative to departure time
         volatile double accidentDuration @unit("s") = default(uniform(30s,60s));  // duration of accident

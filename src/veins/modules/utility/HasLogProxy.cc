@@ -22,7 +22,7 @@
 
 #include "veins/modules/utility/HasLogProxy.h"
 
-namespace veins {
+namespace Veins {
 
 HasLogProxy::HasLogProxy(cComponent* owner)
     : owner(owner)

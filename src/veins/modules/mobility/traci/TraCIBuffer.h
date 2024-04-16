@@ -20,25 +20,27 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef VEINS_MOBILITY_TRACI_TRACIBUFFER_H_
+#define VEINS_MOBILITY_TRACI_TRACIBUFFER_H_
 
 #include <cstddef>
 #include <string>
 
-#include "veins/veins.h"
+#include "veins/base/utils/MiXiMDefs.h"
 
 #include "veins/modules/mobility/traci/TraCIConstants.h"
 
-namespace veins {
+namespace Veins {
 
 struct TraCICoord;
 
-bool VEINS_API isBigEndian();
+bool isBigEndian();
 
 /**
  * Byte-buffer that stores values in TraCI byte-order
  */
-class VEINS_API TraCIBuffer {
+class TraCIBuffer
+{
 public:
     TraCIBuffer();
     TraCIBuffer(std::string buf);
@@ -131,36 +133,6 @@ public:
         return read<T>();
     }
 
-    /**
-     * @brief
-     * first read a Byte. Only if read value is 0 and EOF has not been reached, read requested data type.
-     */
-    template <typename T>
-    T readByteOrFull()
-    {
-        uint8_t shortBuf = read<uint8_t>();
-        if (shortBuf > 0 || eof()) {
-            return shortBuf;
-        }
-        return read<T>();
-    }
-
-    /**
-     * @brief
-     * write only a Byte if value fits in a Byte. Otherwise write with requested data type.
-     */
-    template <typename T>
-    void writeByteOrFull(T inv)
-    {
-        if (inv < 256) {
-            uint8_t shortBuf = inv;
-            write(shortBuf);
-            return;
-        }
-        write<uint8_t>(0);
-        write(inv);
-    }
-
     bool eof() const;
     void set(std::string buf);
     void clear();
@@ -184,13 +156,13 @@ private:
 template <>
 std::vector<std::string> TraCIBuffer::readTypeChecked(int expectedTraCIType);
 template <>
-void VEINS_API TraCIBuffer::write(std::string inv);
+void TraCIBuffer::write(std::string inv);
 template <>
-void VEINS_API TraCIBuffer::write(std::list<std::string> inv);
+void TraCIBuffer::write(std::list<std::string> inv);
 template <>
 void TraCIBuffer::write(TraCICoord inv);
 template <>
-std::string VEINS_API TraCIBuffer::read();
+std::string TraCIBuffer::read();
 template <>
 TraCICoord TraCIBuffer::read();
 template <>
@@ -198,4 +170,6 @@ void TraCIBuffer::write(simtime_t o);
 template <>
 simtime_t TraCIBuffer::read();
 
-} // namespace veins
+}
+
+#endif /* VEINS_MOBILITY_TRACI_TRACIBUFFER_H_ */

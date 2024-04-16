@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,15 +18,13 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef __VEINS_MYVEINSAPP_H_
+#define __VEINS_MYVEINSAPP_H_
 
-#include "veins/veins.h"
-
-#include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
+#include <omnetpp.h>
+#include "veins/modules/application/ieee80211p/BaseWaveApplLayer.h"
 
 using namespace omnetpp;
-
-namespace veins {
 
 /**
  * @brief
@@ -40,18 +36,17 @@ namespace veins {
  *
  */
 
-class VEINS_API MyVeinsApp : public DemoBaseApplLayer {
-public:
-    void initialize(int stage) override;
-    void finish() override;
+class MyVeinsApp : public BaseWaveApplLayer {
+    public:
+        virtual void initialize(int stage);
+        virtual void finish();
+    protected:
+        virtual void onBSM(BasicSafetyMessage* bsm);
+        virtual void onWSM(WaveShortMessage* wsm);
+        virtual void onWSA(WaveServiceAdvertisment* wsa);
 
-protected:
-    void onBSM(DemoSafetyMessage* bsm) override;
-    void onWSM(BaseFrame1609_4* wsm) override;
-    void onWSA(DemoServiceAdvertisment* wsa) override;
+        virtual void handleSelfMsg(cMessage* msg);
+        virtual void handlePositionUpdate(cObject* obj);
+    };
 
-    void handleSelfMsg(cMessage* msg) override;
-    void handlePositionUpdate(cObject* obj) override;
-};
-
-} // namespace veins
+#endif

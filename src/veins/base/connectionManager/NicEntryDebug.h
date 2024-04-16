@@ -1,38 +1,31 @@
-//
-// Copyright (C) 2005 Telecommunication Networks Group (TKN) at Technische Universitaet Berlin, Germany.
-//
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
+/* -*- mode:c++ -*- ********************************************************
+ * file:        NicEntryDebug.h
+ *
+ * author:      Daniel Willkomm
+ *
+ * copyright:   (C) 2005 Telecommunication Networks Group (TKN) at
+ *              Technische Universitaet Berlin, Germany.
+ *
+ *              This program is free software; you can redistribute it
+ *              and/or modify it under the terms of the GNU General Public
+ *              License as published by the Free Software Foundation; either
+ *              version 2 of the License, or (at your option) any later
+ *              version.
+ *              For further information see file COPYING
+ *              in the top level directory
+ ***************************************************************************
+ * part of:     framework implementation developed by tkn
+ * description: Class to store information about a nic for the
+ *              ConnectionManager module
+ **************************************************************************/
 
-// author:      Daniel Willkomm
-// part of:     framework implementation developed by tkn
-// description: Class to store information about a nic for the
-//              ConnectionManager module
-
-#pragma once
+#ifndef NICENTRYDEBUG_H
+#define NICENTRYDEBUG_H
 
 #include "veins/base/connectionManager/NicEntry.h"
 
 #include <map>
 #include <vector>
-
-namespace veins {
 
 /**
  * @brief NicEntry is used by ConnectionManager to store the necessary
@@ -42,8 +35,9 @@ namespace veins {
  * @author Daniel Willkomm
  * @sa ConnectionManager, NicEntry
  */
-class VEINS_API NicEntryDebug : public NicEntry {
-protected:
+class NicEntryDebug: public NicEntry
+{
+  protected:
     /** @brief Number of in gates allocated for the nic so far*/
     int inCnt;
 
@@ -59,27 +53,27 @@ protected:
      */
     bool checkFreeGates;
 
-    using GateStack = std::vector<cGate*>;
+    typedef std::vector<cGate* > GateStack;
     /** @brief In Gates that were once used but are not connected now */
     GateStack freeInGates;
 
     /** @brief Out Gates that were once used but are not connected now */
     GateStack freeOutGates;
 
-protected:
+  protected:
     /**
      * @brief Returns a free in gate of the nic
-     *
-     * This checks the list of free in gates, if one is available it is
-     * returned. Otherwise, a new in gate is added to the nic.
-     */
+	 *
+	 * This checks the list of free in gates, if one is available it is
+	 * returned. Otherwise, a new in gate is added to the nic.
+	 */
     cGate* requestInGate(void);
 
     /**
      * @brief Returns a free out gate of the nic
      *
-     * returns a free out gate. If none is available it is created. See
-     * NicEntry::requestInGate for a detailed description
+	 * returns a free out gate. If none is available it is created. See
+	 * NicEntry::requestInGate for a detailed description
      */
     cGate* requestOutGate(void);
 
@@ -107,22 +101,21 @@ protected:
      */
     void collectFreeGates();
 
-public:
+  public:
     /**
      * @brief Constructor, initializes all members
      */
-    NicEntryDebug(cComponent* owner)
-        : NicEntry(owner)
-        , inCnt(0)
-        , outCnt(0)
-        , checkFreeGates(true){};
+    NicEntryDebug(bool debug) :
+    	NicEntry(debug),
+    	inCnt(0),
+    	outCnt(0),
+    	checkFreeGates(true)
+    {};
 
     /**
      * @brief Removes all dynamically created out-/ingates.
      */
-    ~NicEntryDebug() override
-    {
-    }
+    virtual ~NicEntryDebug() {}
 
     /**
      * @brief Connect two nics
@@ -135,16 +128,16 @@ public:
      * gate at this nic, connects the two and updates the freeInGate,
      * freeOutGate and outConns data sets.
      **/
-    void connectTo(NicEntry* other) override;
+    virtual void connectTo(NicEntry* other);
 
     /**
      * @brief Disconnect two nics
      *
-     * Release unidirectional connection with other nic
-     *
-     * @param other reference to remote nic (other NicEntry)
-     **/
-    void disconnectFrom(NicEntry* other) override;
+	 * Release unidirectional connection with other nic
+	 *
+	 * @param other reference to remote nic (other NicEntry)
+	 **/
+    virtual void disconnectFrom(NicEntry* other);
 };
 
-} // namespace veins
+#endif

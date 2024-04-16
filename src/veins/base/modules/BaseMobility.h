@@ -1,39 +1,35 @@
-//
-// Copyright (C) 2004 Telecommunication Networks Group (TKN) at Technische Universitaet Berlin, Germany.
-// Copyright (C) 2005 Andras Varga
-//
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
+/* -*- mode:c++ -*- ********************************************************
+ * file:        BaseMobility.h
+ *
+ * author:      Daniel Willkomm, Andras Varga
+ *
+ * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
+ *              Technische Universitaet Berlin, Germany.
+ *
+ *              (C) 2005 Andras Varga
+ *
+ *              This program is free software; you can redistribute it
+ *              and/or modify it under the terms of the GNU General Public
+ *              License as published by the Free Software Foundation; either
+ *              version 2 of the License, or (at your option) any later
+ *              version.
+ *              For further information see file COPYING
+ *              in the top level directory
+ ***************************************************************************
+ * part of:     framework implementation developed by tkn
+ **************************************************************************/
 
-// author:      Daniel Willkomm, Andras Varga
-// part of:     framework implementation developed by tkn
 
-#pragma once
+#ifndef BASE_MOBILITY_H
+#define BASE_MOBILITY_H
 
-#include "veins/veins.h"
-
+#include "veins/base/utils/MiXiMDefs.h"
 #include "veins/base/modules/BatteryAccess.h"
 #include "veins/base/utils/Coord.h"
 #include "veins/base/utils/Move.h"
 #include "veins/base/modules/BaseWorldUtility.h"
 
-namespace veins {
+using Veins::BatteryAccess;
 
 /**
  * @brief Base module for all mobility modules.
@@ -64,8 +60,9 @@ namespace veins {
  * @ingroup baseModules
  * @author Daniel Willkomm, Andras Varga
  */
-class VEINS_API BaseMobility : public BatteryAccess {
-public:
+class MIXIM_API BaseMobility : public BatteryAccess
+{
+  public:
     /**
      * @brief Selects how a node should behave if it reaches the edge
      * of the playground.
@@ -73,10 +70,10 @@ public:
      * @sa handleIfOutside()
      */
     enum BorderPolicy {
-        REFLECT, ///< reflect off the wall
-        WRAP, ///< reappear at the opposite edge (torus)
+        REFLECT,       ///< reflect off the wall
+        WRAP,          ///< reappear at the opposite edge (torus)
         PLACERANDOMLY, ///< placed at a randomly chosen position on the playground
-        RAISEERROR ///< stop the simulation with error
+        RAISEERROR     ///< stop the simulation with error
     };
 
     /**
@@ -88,38 +85,42 @@ public:
         MOVE_HOST = 21311,
         MOVE_TO_BORDER,
         /** Stores the id on which classes extending BaseMobility should
-         * continue their own kinds.*/
-        LAST_BASE_MOBILITY_KIND,
+		 * continue their own kinds.*/
+		LAST_BASE_MOBILITY_KIND,
     };
 
     /**
      * @brief Specifies which border actually has been reached
      */
     enum BorderHandling {
-        NOWHERE, ///< not outside the playground
+    	NOWHERE,   ///< not outside the playground
         X_SMALLER, ///< x smaller than 0
-        X_BIGGER, ///< x bigger or equal than playground size
-        Y_SMALLER, ///< y smaller than 0
-        Y_BIGGER, ///< y bigger or equal than playground size
-        Z_SMALLER, ///< z smaller than 0
-        Z_BIGGER ///< z bigger or equal than playground size
+		X_BIGGER,  ///< x bigger or equal than playground size
+		Y_SMALLER, ///< y smaller than 0
+		Y_BIGGER,  ///< y bigger or equal than playground size
+		Z_SMALLER, ///< z smaller than 0
+		Z_BIGGER   ///< z bigger or equal than playground size
     };
 
-    /** @brief Store the category of HostMove */
-    const static simsignal_t mobilityStateChangedSignal;
+  protected:
 
-protected:
     /** @brief Pointer to BaseWorldUtility -- these two must know each other */
-    BaseWorldUtility* world;
+    BaseWorldUtility *world;
 
     /** @brief Stores the current position and move pattern of the host*/
     Move move;
+
+    /** @brief Store the category of HostMove */
+    const static simsignalwrap_t mobilityStateChangedSignal;
 
     /** @brief Time interval (in seconds) to update the hosts position*/
     simtime_t updateInterval;
 
     /** @brief Self message to trigger movement */
     cMessage* moveMsg;
+
+    /** @brief debug this core module? */
+    bool coreDebug;
 
     /** @brief Enable depth dependent scaling of nodes when 3d and tkenv is
      * used. */
@@ -137,11 +138,8 @@ protected:
 
     /** @brief The original size of the icon of the node.*/
     double origIconSize;
+  public:
 
-    bool hasStartPosition;
-    Coord startPosition;
-
-public:
     BaseMobility();
     BaseMobility(unsigned stacksize);
 
@@ -150,7 +148,7 @@ public:
      * Dispatches border messages to handleBorderMsg() and all other
      * self-messages to handleSelfMsg()
      */
-    void handleMessage(cMessage* msg) override;
+    virtual void handleMessage(cMessage *msg);
 
     /** @brief Initializes mobility model parameters.
      *
@@ -166,41 +164,30 @@ public:
      * If the speed of the host is bigger than 0 a first MOVE_HOST self
      * message is scheduled in stage 1
      */
-    void initialize(int) override;
+    virtual void initialize(int);
 
     /** @brief Delete dynamically allocated objects*/
-    void finish() override {};
+    virtual void finish(){};
 
-    /** @brief Returns the current position at the given simulation time. */
-    virtual Coord getPositionAt(simtime_t_cref stWhen) const
-    {
-        return move.getPositionAt(stWhen);
+    /** @brief Returns the current position at the current simulation time. */
+    virtual Coord getCurrentPosition(/*simtime_t_cref stWhen = simTime()*/) const {
+    	//return move.getPositionAt(stWhen);
+    	return move.getStartPos();
     }
 
-    virtual Coord getCurrentOrientation() const
-    {
+    virtual Coord getCurrentOrientation() const {
         return move.getOrientation();
     }
 
     /** @brief Returns the current speed at the current simulation time. */
-    virtual Coord getCurrentSpeed() const
-    {
-        return move.getDirection() * move.getSpeed();
+    virtual Coord getCurrentSpeed() const {
+    	return move.getDirection() * move.getSpeed();
     }
 
-    virtual Coord getCurrentDirection() const
-    {
+    virtual Coord getCurrentDirection() const {
         return move.getDirection();
     }
-
-    /** @brief Overrides start position if called before initialize() */
-    virtual void setStartPosition(Coord pos)
-    {
-        hasStartPosition = true;
-        startPosition = pos;
-    }
-
-protected:
+  protected:
     /**
      * @brief Maps the passed icon size tag (is) to an actual size in pixels.
      *
@@ -210,13 +197,13 @@ protected:
     virtual int iconSizeTagToSize(const char* tag);
 
     /**
-     * @brief Maps the passed size in pixels to an appropriate icon size
-     * tag (is).
-     *
-     * @param size - the icon size to get an appropriate tag for
-     * @return an icon size tag
-     */
-    virtual const char* iconSizeToTag(double size);
+	 * @brief Maps the passed size in pixels to an appropriate icon size
+	 * tag (is).
+	 *
+	 * @param size - the icon size to get an appropriate tag for
+	 * @return an icon size tag
+	 */
+	virtual const char* iconSizeToTag(double size);
 
     /** @brief Called upon arrival of a self messages
      *
@@ -227,7 +214,7 @@ protected:
      * movement. Afterward updatePosition updates the position with the
      * display.
      */
-    virtual void handleSelfMsg(cMessage*);
+    virtual void handleSelfMsg( cMessage* );
 
     /** @brief Called upon arrival of a border messages
      *
@@ -238,7 +225,7 @@ protected:
      * cases where the host moved in both (x and y) direction outside the
      * playground.
      */
-    virtual void handleBorderMsg(cMessage*);
+    virtual void handleBorderMsg( cMessage* );
 
     /**
      * @brief Moves the host
@@ -249,9 +236,8 @@ protected:
      *
      * You should call fixIfHostGetsOutside here for border handling
      */
-    virtual void makeMove()
-    {
-        throw cRuntimeError("BaseMobility does not move the host");
+    virtual void makeMove(){
+    	error("BaseMobility does not move the host");
     };
 
     /** @brief Update the position information for this node
@@ -266,28 +252,16 @@ protected:
     virtual void updatePosition();
 
     /** @brief Returns the width of the playground */
-    double playgroundSizeX() const
-    {
-        return world->getPgs()->x;
-    }
+    double playgroundSizeX() const  {return world->getPgs()->x;}
 
     /** @brief Returns the height of the playground */
-    double playgroundSizeY() const
-    {
-        return world->getPgs()->y;
-    }
+    double playgroundSizeY() const  {return world->getPgs()->y;}
 
     /** @brief Returns the height of the playground */
-    double playgroundSizeZ() const
-    {
-        return world->getPgs()->z;
-    }
+    double playgroundSizeZ() const  {return world->getPgs()->z;}
 
-    /** @brief Random position somewhere in the playground. DEPRECATED: Use BaseWorldUtility::getRandomPosition() instead */
-    Coord getRandomPosition()
-    {
-        return world->getRandomPosition();
-    }
+	/** @brief Random position somewhere in the playground. DEPRECATED: Use BaseWorldUtility::getRandomPosition() instead */
+	Coord getRandomPosition() { return world->getRandomPosition();}
 
     /**
      * @name Border handling
@@ -300,31 +274,31 @@ protected:
 
     /** @brief Main border handling function
      *
-     * This function takes the BorderPolicy and all variables to be
-     * modified in case a border is reached and invokes the appropriate
-     * action. Pass dummy variables if you do not need them.
-     *
-     * The supported border policies are REFLECT, WRAP, PLACERANDOMLY, and
-     * RAISEERROR.
-     *
-     * The policy and stepTarget are mandatory parameters to
-     * pass. stepTarget is used to check whether the host actually moved
-     * outside the playground.
-     *
-     * Additional parameters to pass (in case of non atomic movements) can
-     * be targetPos (the target the host is moving to) and step (the size
-     * of a step).
-     *
-     * Angle is the direction in which the host is moving.
-     *
-     * @param policy BorderPolicy to use
-     * @param stepTarget target position of the next step of the host
-     * @param targetPos target position of the host (for non atomic movement)
-     * @param step step size of the host (for non atomic movement)
-     * @param angle direction in which the host is moving
-     *
-     * @return true if host was outside, false otherwise.
-     */
+	 * This function takes the BorderPolicy and all variables to be
+	 * modified in case a border is reached and invokes the appropriate
+	 * action. Pass dummy variables if you do not need them.
+	 *
+	 * The supported border policies are REFLECT, WRAP, PLACERANDOMLY, and
+	 * RAISEERROR.
+	 *
+	 * The policy and stepTarget are mandatory parameters to
+	 * pass. stepTarget is used to check whether the host actually moved
+	 * outside the playground.
+	 *
+	 * Additional parameters to pass (in case of non atomic movements) can
+	 * be targetPos (the target the host is moving to) and step (the size
+	 * of a step).
+	 *
+	 * Angle is the direction in which the host is moving.
+	 *
+	 * @param policy BorderPolicy to use
+	 * @param stepTarget target position of the next step of the host
+	 * @param targetPos target position of the host (for non atomic movement)
+	 * @param step step size of the host (for non atomic movement)
+	 * @param angle direction in which the host is moving
+	 *
+	 * @return true if host was outside, false otherwise.
+	 */
     bool handleIfOutside(BorderPolicy, Coord&, Coord&, Coord&, double&);
 
     /**
@@ -339,9 +313,8 @@ protected:
      *
      * @sa HandleIfOutside
      */
-    virtual void fixIfHostGetsOutside()
-    {
-        throw cRuntimeError("fixIfHostGetsOutside has to be redefined by the user");
+    virtual void fixIfHostGetsOutside(){
+    	error("fixIfHostGetsOutside has to be redefined by the user");
     };
 
     /**
@@ -354,7 +327,7 @@ protected:
      * Additionally the calculation of the step to reach the border is
      * started.
      */
-    BorderHandling checkIfOutside(Coord, Coord&);
+    BorderHandling checkIfOutside( Coord, Coord& );
 
     /** @brief calculate the step to reach the border
      *
@@ -362,7 +335,7 @@ protected:
      * policy the new start position after reaching the border is
      * calculated.
      */
-    void goToBorder(BorderPolicy, BorderHandling, Coord&, Coord&);
+    void goToBorder( BorderPolicy, BorderHandling, Coord&, Coord& );
 
     /**
      * @brief helperfunction for reflectIfOutside() to reflect
@@ -416,9 +389,11 @@ protected:
      * You have to define a new target postion in fixIfHostGetsOutside to
      * keep the host moving.
      */
-    void placeRandomlyIfOutside(Coord&);
+    void placeRandomlyIfOutside( Coord& );
 
     /*@}*/
+
 };
 
-} // namespace veins
+#endif
+

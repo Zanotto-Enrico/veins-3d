@@ -25,9 +25,9 @@
 #include <string>
 #include <sstream>
 
-namespace veins {
+namespace Veins {
 
-class VEINS_API ParBuffer {
+class ParBuffer {
 public:
     ParBuffer()
         : SEP(':')

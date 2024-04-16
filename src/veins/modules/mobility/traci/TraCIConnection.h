@@ -20,23 +20,23 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef VEINS_MOBILITY_TRACI_TRACICONNECTION_H_
+#define VEINS_MOBILITY_TRACI_TRACICONNECTION_H_
 
 #include <stdint.h>
 #include <memory>
 
 #include "veins/modules/mobility/traci/TraCIBuffer.h"
 #include "veins/modules/mobility/traci/TraCICoord.h"
-#include "veins/modules/mobility/traci/TraCICoordinateTransformation.h"
+#include <veins/modules/mobility/traci/TraCICoordinateTransformation.h>
 #include "veins/base/utils/Coord.h"
-#include "veins/base/utils/Heading.h"
 #include "veins/modules/utility/HasLogProxy.h"
 
-namespace veins {
+namespace Veins {
 
-class VEINS_API TraCIConnection : public HasLogProxy {
+class TraCIConnection : public HasLogProxy {
 public:
-    class VEINS_API Result {
+    class Result {
     public:
         Result();
         Result(bool success, bool not_impl, std::string message);
@@ -69,14 +69,14 @@ public:
     std::string receiveMessage();
 
     /**
-     * convert TraCI heading to OMNeT++ heading (in rad)
+     * convert TraCI angle to OMNeT++ angle (in rad)
      */
-    Heading traci2omnetHeading(double heading) const;
+    double traci2omnetAngle(double angle) const;
 
     /**
-     * convert OMNeT++ heading (in rad) to TraCI heading
+     * convert OMNeT++ angle (in rad) to TraCI angle
      */
-    double omnet2traciHeading(Heading heading) const;
+    double omnet2traciAngle(double angle) const;
 
     /**
      * convert TraCI coordinates to OMNeT++ coordinates
@@ -102,4 +102,6 @@ private:
  */
 std::string makeTraCICommand(uint8_t commandId, const TraCIBuffer& buf = TraCIBuffer());
 
-} // namespace veins
+}
+
+#endif /* VEINS_MOBILITY_TRACI_TRACICONNECTION_H_ */

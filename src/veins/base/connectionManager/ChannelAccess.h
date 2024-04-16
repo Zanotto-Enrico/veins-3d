@@ -1,47 +1,40 @@
-//
-// Copyright (C) 2004 Telecommunication Networks Group (TKN) at Technische Universitaet Berlin, Germany.
-//
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
+/* -*- mode:c++ -*- ********************************************************
+ * file:        ChannelAccess.h
+ *
+ * author:      Marc Loebbers
+ *
+ * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
+ *              Technische Universitaet Berlin, Germany.
+ *
+ *              This program is free software; you can redistribute it
+ *              and/or modify it under the terms of the GNU General Public
+ *              License as published by the Free Software Foundation; either
+ *              version 2 of the License, or (at your option) any later
+ *              version.
+ *              For further information see file COPYING
+ *              in the top level directory
+ ***************************************************************************
+ * part of:     framework implementation developed by tkn
+ * description: - Base class for physical layers
+ *              - if you create your own physical layer, please subclass
+ *                from this class and use the sendToChannel() function!!
+ **************************************************************************/
 
-// author:      Marc Loebbers
-// part of:     framework implementation developed by tkn
-// description: - Base class for physical layers
-//              - if you create your own physical layer, please subclass
-//                from this class and use the sendToChannel() function!!
 
-#pragma once
+#ifndef CHANNEL_ACCESS_H
+#define CHANNEL_ACCESS_H
 
+#include <omnetpp.h>
 #include <vector>
 
-#include "veins/veins.h"
-
-#include "veins/base/utils/AntennaPosition.h"
+#include "veins/base/utils/MiXiMDefs.h"
 #include "veins/base/modules/BatteryAccess.h"
+
 #include "veins/base/utils/FindModule.h"
 #include "veins/base/modules/BaseMobility.h"
-#include "veins/base/utils/Heading.h"
+typedef AccessModuleWrap<BaseMobility>                ChannelMobilityAccessType;
+typedef ChannelMobilityAccessType::wrapType* ChannelMobilityPtrType;
 
-namespace veins {
-
-using ChannelMobilityAccessType = AccessModuleWrap<BaseMobility>;
-using ChannelMobilityPtrType = ChannelMobilityAccessType::wrapType*;
 class NicEntry;
 class BaseConnectionManager;
 class BaseWorldUtility;
@@ -61,90 +54,80 @@ class BaseWorldUtility;
  * @ingroup phyLayer
  * @ingroup baseModules
  **/
-class VEINS_API ChannelAccess : public BatteryAccess, protected ChannelMobilityAccessType {
+namespace Veins {
+class MIXIM_API ChannelAccess : public BatteryAccess, protected ChannelMobilityAccessType
+{
 protected:
-    /** @brief use sendDirect or not?*/
-    bool useSendDirect;
+	/** @brief A signal used to subscribe to mobility state changes. */
+	const static simsignalwrap_t mobilityStateChangedSignal;
 
-    /** @brief Pointer to the PropagationModel module*/
-    BaseConnectionManager* cc;
+	/** @brief use sendDirect or not?*/
+	bool useSendDirect;
 
-    /** @brief Defines if the physical layer should simulate propagation delay.*/
-    bool usePropagationDelay;
+	/** @brief Pointer to the PropagationModel module*/
+	BaseConnectionManager* cc;
 
-    /** @brief Is this module already registered with ConnectionManager? */
-    bool isRegistered;
+	/** @brief debug this core module? */
+	bool coreDebug;
 
-    /** @brief Pointer to the World Utility, to obtain some global information*/
-    BaseWorldUtility* world;
+	/** @brief Defines if the physical layer should simulate propagation delay.*/
+	bool usePropagationDelay;
 
-    /** @brief Current antenna position */
-    AntennaPosition antennaPosition;
+	/** @brief Is this module already registered with ConnectionManager? */
+	bool isRegistered;
 
-    /** @brief Current antenna heading (angle) */
-    Heading antennaHeading;
-
-    /** @brief Offset of antenna position (in m) with respect to what a BaseMobility module will tell us */
-    Coord antennaOffset = Coord(0, 0, 0);
-
-    /** @brief Offset of antenna orientation (yaw, in rad) with respect to what a BaseMobility module will tell us */
-    double antennaOffsetYaw = 0;
+	/** @brief Pointer to the World Utility, to obtain some global information*/
+	BaseWorldUtility* world;
 
 protected:
-    /**
-     * @brief Calculates the propagation delay to the passed receiving nic.
-     */
-    simtime_t calculatePropagationDelay(const NicEntry* nic);
+	/**
+	 * @brief Calculates the propagation delay to the passed receiving nic.
+	 */
+	simtime_t calculatePropagationDelay(const NicEntry* nic);
 
-    /** @brief Sends a message to all nics connected to this one.
-     *
-     * This function has to be called whenever a packet is supposed to be
-     * sent to the channel. Don't try to figure out what gates you have
-     * and which ones are connected, this function does this for you!
-     *
-     * depending on which ConnectionManager module is used, the messages are
-     * send via sendDirect() or to the respective gates.
-     **/
-    void sendToChannel(cPacket* msg);
+	/** @brief Sends a message to all nics connected to this one.
+	 *
+	 * This function has to be called whenever a packet is supposed to be
+	 * sent to the channel. Don't try to figure out what gates you have
+	 * and which ones are connected, this function does this for you!
+	 *
+	 * depending on which ConnectionManager module is used, the messages are
+	 * send via sendDirect() or to the respective gates.
+	 **/
+	void sendToChannel(cPacket *msg);
 
 public:
-    /**
-     * @brief Returns a pointer to the ConnectionManager responsible for the
-     * passed NIC module.
-     *
-     * @param nic a pointer to a NIC module
-     * @return a pointer to a connection manager module or NULL if an error
-     * occurred
-     */
-    static BaseConnectionManager* getConnectionManager(cModule* nic);
+	/**
+	 * @brief Returns a pointer to the ConnectionManager responsible for the
+	 * passed NIC module.
+	 *
+	 * @param nic a pointer to a NIC module
+	 * @return a pointer to a connection manager module or NULL if an error
+	 * occurred
+	 */
+	static BaseConnectionManager* getConnectionManager(cModule* nic);
 
-    /** @brief Register with ConnectionManager.
-     *
-     * Upon initialization ChannelAccess registers the nic parent module
-     * to have all its connections handeled by ConnectionManager
-     **/
-    void initialize(int stage) override;
+	/** @brief Register with ConnectionManager.
+	 *
+	 * Upon initialization ChannelAccess registers the nic parent module
+	 * to have all its connections handeled by ConnectionManager
+	 **/
+	virtual void initialize(int stage);
 
-    /**
-     * @brief Called by the signalling mechanism to inform of changes.
-     *
-     * ChannelAccess is subscribed to position changes and informs the
-     * ConnectionManager.
-     */
-    void receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details) override;
+	/**
+	 * @brief Called by the signalling mechanism to inform of changes.
+	 *
+	 * ChannelAccess is subscribed to position changes and informs the
+	 * ConnectionManager.
+	 */
+	virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject* details);
 
-    /**
-     * @brief Returns the host's mobility module.
-     */
-    virtual ChannelMobilityPtrType getMobilityModule()
-    {
-        return ChannelMobilityAccessType::get(this);
-    }
-
-    virtual AntennaPosition getAntennaPosition() const
-    {
-        return antennaPosition;
-    }
+	/**
+	 * @brief Returns the host's mobility module.
+	 */
+	virtual ChannelMobilityPtrType getMobilityModule() { return ChannelMobilityAccessType::get(this); }
 };
+}
 
-} // namespace veins
+#endif
+

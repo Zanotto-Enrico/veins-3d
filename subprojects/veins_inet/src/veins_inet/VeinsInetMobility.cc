@@ -1,9 +1,7 @@
 //
-// Copyright (C) 2006-2018 Christoph Sommer <sommer@ccs-labs.org>
+// Copyright (C) 2006-2017 Christoph Sommer <sommer@ccs-labs.org>
 //
 // Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,163 +19,125 @@
 //
 
 //
-// Veins Mobility module for the INET Framework
-// Based on inet::MovingMobilityBase of INET Framework v4.0.0
+// Veins Mobility module for the INET Framework (i.e., implementing inet::IMobility)
+// Based on inet::MobilityBase of INET Framework v3.4.0
 //
 
-#include "veins_inet/VeinsInetMobility.h"
-
+#undef INET_IMPORT
 #include "inet/common/INETMath.h"
-#include "inet/common/Units.h"
-#include "inet/common/geometry/common/GeographicCoordinateSystem.h"
+#include "veins_inet/VeinsInetMobility.h"
+#include "inet/visualizer/mobility/MobilityCanvasVisualizer.h"
 
-namespace veins {
+namespace Veins {
 
-using namespace inet::units::values;
+using inet::Coord;
 
 Register_Class(VeinsInetMobility);
 
-VeinsInetMobility::VeinsInetMobility()
-{
+
+//
+// Public, lifecycle
+//
+
+VeinsInetMobility::VeinsInetMobility() :
+	visualRepresentation(nullptr),
+	constraintAreaMin(Coord::ZERO),
+	constraintAreaMax(Coord::ZERO),
+	lastPosition(Coord::ZERO),
+	lastSpeed(Coord::ZERO),
+	lastOrientation(inet::EulerAngles::ZERO) {
 }
 
-VeinsInetMobility::~VeinsInetMobility()
-{
-    delete vehicleCommandInterface;
+//
+// Public, called from manager
+//
+
+void VeinsInetMobility::preInitialize(std::string external_id, const inet::Coord& position, std::string road_id, double speed, double angle) {
+	Enter_Method_Silent();
+	lastPosition = position;
+	lastSpeed = Coord(cos(angle), -sin(angle));
+	lastOrientation.alpha = -angle;
 }
 
-void VeinsInetMobility::preInitialize(std::string external_id, const inet::Coord& position, std::string road_id, double speed, double angle)
-{
-    Enter_Method_Silent();
-    this->external_id = external_id;
-    lastPosition = position;
-    lastVelocity = inet::Coord(cos(angle), -sin(angle)) * speed;
-    lastOrientation = inet::Quaternion(inet::EulerAngles(rad(-angle), rad(0.0), rad(0.0)));
+void VeinsInetMobility::nextPosition(const inet::Coord& position, std::string road_id, double speed, double angle) {
+	Enter_Method_Silent();
+	lastPosition = position;
+	lastSpeed = Coord(cos(angle), -sin(angle));
+	lastOrientation.alpha = -angle;
+	emitMobilityStateChangedSignal();
+	updateVisualRepresentation();
 }
 
-void VeinsInetMobility::initialize(int stage)
-{
-    MobilityBase::initialize(stage);
 
-    // We patch the OMNeT++ Display String to set the initial position. Make sure this works.
-    ASSERT(hasPar("initFromDisplayString") && par("initFromDisplayString"));
+//
+// Public, implementing IMobility interface
+//
+
+double VeinsInetMobility::getMaxSpeed() const {
+	return NaN;
 }
 
-void VeinsInetMobility::nextPosition(const inet::Coord& position, std::string road_id, double speed, double angle)
-{
-    Enter_Method_Silent();
-
-    lastPosition = position;
-    lastVelocity = inet::Coord(cos(angle), -sin(angle)) * speed;
-    lastOrientation = inet::Quaternion(inet::EulerAngles(rad(-angle), rad(0.0), rad(0.0)));
-
-    // Update display string to show node is getting updates
-    auto hostMod = getParentModule();
-    if (std::string(hostMod->getDisplayString().getTagArg("veins", 0)) == ". ") {
-        hostMod->getDisplayString().setTagArg("veins", 0, " .");
-    }
-    else {
-        hostMod->getDisplayString().setTagArg("veins", 0, ". ");
-    }
-
-    emitMobilityStateChangedSignal();
+Coord VeinsInetMobility::getCurrentPosition() {
+	return lastPosition;
 }
 
-#if INET_VERSION >= 0x0403
-const inet::Coord& VeinsInetMobility::getCurrentPosition()
-{
-    return lastPosition;
+Coord VeinsInetMobility::getCurrentSpeed() {
+	return lastSpeed;
 }
 
-const inet::Coord& VeinsInetMobility::getCurrentVelocity()
-{
-    return lastVelocity;
+inet::EulerAngles VeinsInetMobility::getCurrentAngularPosition() {
+	return lastOrientation;
 }
 
-const inet::Coord& VeinsInetMobility::getCurrentAcceleration()
-{
-    throw cRuntimeError("Invalid operation");
+
+//
+// Protected
+//
+
+void VeinsInetMobility::initialize(int stage) {
+	cSimpleModule::initialize(stage);
+	//EV_TRACE << "initializing VeinsInetMobility stage " << stage << endl;
+	if (stage == inet::INITSTAGE_LOCAL) {
+		constraintAreaMin.x = par("constraintAreaMinX");
+		constraintAreaMin.y = par("constraintAreaMinY");
+		constraintAreaMin.z = par("constraintAreaMinZ");
+		constraintAreaMax.x = par("constraintAreaMaxX");
+		constraintAreaMax.y = par("constraintAreaMaxY");
+		constraintAreaMax.z = par("constraintAreaMaxZ");
+		bool visualizeMobility = par("visualizeMobility");
+		if (visualizeMobility) {
+			visualRepresentation = inet::getModuleFromPar<cModule>(par("visualRepresentation"), this);
+		}
+		WATCH(constraintAreaMin);
+		WATCH(constraintAreaMax);
+		WATCH(lastPosition);
+		WATCH(lastSpeed);
+		WATCH(lastOrientation);
+	}
+	else if (stage == inet::INITSTAGE_PHYSICAL_ENVIRONMENT_2) {
+		if (visualRepresentation != nullptr) {
+			auto visualizationTarget = visualRepresentation->getParentModule();
+			canvasProjection = inet::CanvasProjection::getCanvasProjection(visualizationTarget->getCanvas());
+		}
+		emitMobilityStateChangedSignal();
+		updateVisualRepresentation();
+	}
 }
 
-const inet::Quaternion& VeinsInetMobility::getCurrentAngularPosition()
-{
-    return lastOrientation;
+void VeinsInetMobility::handleMessage(cMessage *message) {
+	throw cRuntimeError("This module does not handle messages");
 }
 
-const inet::Quaternion& VeinsInetMobility::getCurrentAngularVelocity()
-{
-    return lastAngularVelocity;
+void VeinsInetMobility::updateVisualRepresentation() {
+	EV_DEBUG << "current position = " << lastPosition << endl;
+	if (hasGUI() && visualRepresentation != nullptr) {
+		inet::visualizer::MobilityCanvasVisualizer::setPosition(visualRepresentation, canvasProjection->computeCanvasPoint(getCurrentPosition()));
+	}
 }
 
-const inet::Quaternion& VeinsInetMobility::getCurrentAngularAcceleration()
-{
-    throw cRuntimeError("Invalid operation");
-}
-#else
-
-inet::Coord VeinsInetMobility::getCurrentPosition()
-{
-    return lastPosition;
+void VeinsInetMobility::emitMobilityStateChangedSignal() {
+	emit(mobilityStateChangedSignal, this);
 }
 
-inet::Coord VeinsInetMobility::getCurrentVelocity()
-{
-    return lastVelocity;
-}
-
-inet::Coord VeinsInetMobility::getCurrentAcceleration()
-{
-    throw cRuntimeError("Invalid operation");
-}
-
-inet::Quaternion VeinsInetMobility::getCurrentAngularPosition()
-{
-    return lastOrientation;
-}
-
-inet::Quaternion VeinsInetMobility::getCurrentAngularVelocity()
-{
-    return lastAngularVelocity;
-}
-
-inet::Quaternion VeinsInetMobility::getCurrentAngularAcceleration()
-{
-    throw cRuntimeError("Invalid operation");
-}
-#endif
-void VeinsInetMobility::setInitialPosition()
-{
-    subjectModule->getDisplayString().setTagArg("p", 0, lastPosition.x);
-    subjectModule->getDisplayString().setTagArg("p", 1, lastPosition.y);
-    MobilityBase::setInitialPosition();
-}
-
-void VeinsInetMobility::handleSelfMessage(cMessage* message)
-{
-}
-
-std::string VeinsInetMobility::getExternalId() const
-{
-    if (external_id == "") throw cRuntimeError("TraCIMobility::getExternalId called with no external_id set yet");
-    return external_id;
-}
-
-TraCIScenarioManager* VeinsInetMobility::getManager() const
-{
-    if (!manager) manager = TraCIScenarioManagerAccess().get();
-    return manager;
-}
-
-TraCICommandInterface* VeinsInetMobility::getCommandInterface() const
-{
-    if (!commandInterface) commandInterface = getManager()->getCommandInterface();
-    return commandInterface;
-}
-
-TraCICommandInterface::Vehicle* VeinsInetMobility::getVehicleCommandInterface() const
-{
-    if (!vehicleCommandInterface) vehicleCommandInterface = new TraCICommandInterface::Vehicle(getCommandInterface()->vehicle(getExternalId()));
-    return vehicleCommandInterface;
-}
 
 } // namespace veins

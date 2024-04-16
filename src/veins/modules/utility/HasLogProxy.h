@@ -23,14 +23,15 @@
 
 #include <string>
 
-#include "veins/veins.h"
+#include <omnetpp.h>
+using namespace omnetpp;
 
-namespace veins {
+namespace Veins {
 
 /**
  * Helper class for logging from classes not derived from cComponent
  */
-class VEINS_API HasLogProxy {
+class HasLogProxy {
 public:
     HasLogProxy(cComponent* owner);
     const cComponent* getThisPtr() const;

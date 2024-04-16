@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -30,14 +28,14 @@ import org.car2x.veins.base.modules.BaseMacLayer;
 // @author Christopher Saloman
 // @author David Eckhoff : rewrote complete model
 //
-// @see DemoBaseApplLayer
+// @see BaseWaveApplLayer
 // @see Nic80211p
 // @see PhyLayer80211p
 //
 simple Mac1609_4 extends BaseMacLayer
 {
     parameters:
-        @class(veins::Mac1609_4);
+        @class(Mac1609_4);
 
         // cycle between an SCH and the CCH (or stay on CCH all the time)
         bool useServiceChannel = default(true);
@@ -45,10 +43,13 @@ simple Mac1609_4 extends BaseMacLayer
         // the service channel this maclayer listens on when started
         int serviceChannel = default(1);
 
+        // debug switch
+        bool debug = default(false);
+
         // length of MAC header, header is already added at 1609_4
         headerLength @unit(bit) = default(0 bit);
 
-        // bit rate
+        // bit rate 
         int bitrate @unit(bps) = default(6 Mbps);
 
         // maximum artificial asynchronization between cars to avoid synchronization effects
@@ -66,24 +67,11 @@ simple Mac1609_4 extends BaseMacLayer
         int dot11LongRetryLimit = default(4);
         int ackLength @unit(bit) = default(112bit);
         bool useAcks = default(false);
-        // artificial drop rates for data frames and acknowledgements for testing purposes
-        double frameErrorRate = default(0);
-        double ackErrorRate = default(0);
+        double ackErrorRate = default(0.20);
 
         // signal informing interested application about channel busy state
-        @signal[org_car2x_veins_modules_mac_sigChannelBusy](type=bool);
-        @statistic[channelBusy](source=org_car2x_veins_modules_mac_sigChannelBusy; record=timeavg, vector?);
+        @signal[sigChannelBusy](type=bool);
         // signal informing interested application about a collision
-        @signal[org_car2x_veins_modules_mac_sigCollision](type=bool);
-        @statistic[collisions](source=org_car2x_veins_modules_mac_sigCollision; record=count, vector?);
-        // signal informing interested application about a sent packet
-        @signal[org_car2x_veins_modules_mac_sigSentPacket](type=bool);
-        @statistic[sentPackets](source=org_car2x_veins_modules_mac_sigSentPacket; record=count, vector?);
-        // signal informing interested application about a sent ackknowledgement
-        @signal[org_car2x_veins_modules_mac_sigSentAck](type=bool);
-        @statistic[sentAcks](source=org_car2x_veins_modules_mac_sigSentAck; record=count, vector?);
-        // signal informing interested application about a failed unicast transmission, passing the frame for which transmission has failed
-        @signal[org_car2x_veins_modules_mac_sigRetriesExceeded](type=BaseFrame1609_4);
-        @statistic[retriesExceeded](source=org_car2x_veins_modules_mac_sigRetriesExceeded; record=count, vector?);
+        @signal[sigCollision](type=bool);
 
 }

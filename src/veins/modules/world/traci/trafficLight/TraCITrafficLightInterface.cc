@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -23,28 +21,16 @@
 #include "veins/modules/world/traci/trafficLight/TraCITrafficLightInterface.h"
 #include "veins/modules/messages/TraCITrafficLightMessage_m.h"
 
-using namespace veins;
+using Veins::TraCITrafficLightInterface;
+using Veins::TraCITrafficLightProgram;
+using Veins::TraCITrafficLightLink;
 
-using veins::TraCITrafficLightInterface;
-using veins::TraCITrafficLightLink;
-using veins::TraCITrafficLightProgram;
+Define_Module(Veins::TraCITrafficLightInterface);
 
-Define_Module(veins::TraCITrafficLightInterface);
-
-TraCITrafficLightInterface::TraCITrafficLightInterface()
-    : cSimpleModule()
-    , isPreInitialized(false)
-    , updateInterval()
-    , manager(nullptr)
-    , commandInterface(nullptr)
-    , tlCommandInterface(nullptr)
-    , external_id("")
-    , position()
-    , programDefinition()
-    , currentLogicId("")
-    , currentPhaseNr(-1)
-    , nextSwitchTime()
-    , inOnlineSignalState(false)
+TraCITrafficLightInterface::TraCITrafficLightInterface() :
+        cSimpleModule(), isPreInitialized(false), updateInterval(), manager(NULL), commandInterface(NULL), tlCommandInterface(
+                NULL), external_id(""), position(), programDefinition(), currentLogicId(""), currentPhaseNr(-1), nextSwitchTime(), inOnlineSignalState(
+                false)
 {
 }
 
@@ -149,7 +135,7 @@ void TraCITrafficLightInterface::setCurrentPhaseByNr(const unsigned int phaseNr,
 {
     if (setSumo) {
         if (phaseNr >= getCurrentLogic().phases.size()) {
-            throw cRuntimeError("Cannot set current phase to %d: current logic has only %d Phases (TraCITrafficLightInterface %s)", phaseNr, static_cast<int>(getCurrentLogic().phases.size()), external_id.c_str());
+            throw cRuntimeError("Cannot set current phase to %d: current logic has only %d Phases (TraCITrafficLightInterface %s)", phaseNr, getCurrentLogic().phases.size(), external_id.c_str());
         }
         tlCommandInterface->setPhaseIndex(phaseNr);
         const unsigned int newValueInSumo = tlCommandInterface->getCurrentPhaseIndex();

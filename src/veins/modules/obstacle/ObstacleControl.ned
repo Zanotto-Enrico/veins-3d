@@ -1,14 +1,11 @@
 //
-// Copyright (C) 2010-2018 Christoph Sommer <sommer@ccs-labs.org>
+// ObstacleControl - models obstacles that block radio transmissions
+// Copyright (C) 2010 Christoph Sommer <christoph.sommer@informatik.uni-erlangen.de>
 //
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 
 package org.car2x.veins.modules.obstacle;
@@ -28,9 +25,10 @@ package org.car2x.veins.modules.obstacle;
 simple ObstacleControl
 {
     parameters:
-        @class(veins::ObstacleControl);
+        @class(Veins::ObstacleControl);
+        bool debug = default(false);  // emit debug messages?
         xml obstacles = default(xml("<obstacles/>")); // list of obstacle types and obstacles to load
-        int gridCellSize = default(250); // size of square grid tiles for obstacle store
+        bool enable3d = default(false);
         @display("i=misc/town");
         @labels(node);
 }

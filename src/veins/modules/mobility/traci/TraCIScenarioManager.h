@@ -20,32 +20,25 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef VEINS_WORLD_TRACI_TRACISCENARIOMANAGER_H
+#define VEINS_WORLD_TRACI_TRACISCENARIOMANAGER_H
 
 #include <map>
-#include <memory>
 #include <list>
 #include <queue>
 
-#include "veins/veins.h"
+#include <omnetpp.h>
 
 #include "veins/base/utils/Coord.h"
+#include "veins/base/utils/GridCoord.h"
 #include "veins/base/modules/BaseWorldUtility.h"
 #include "veins/base/connectionManager/BaseConnectionManager.h"
 #include "veins/base/utils/FindModule.h"
 #include "veins/modules/obstacle/ObstacleControl.h"
-#include "veins/modules/obstacle/VehicleObstacleControl.h"
 #include "veins/modules/mobility/traci/TraCIBuffer.h"
 #include "veins/modules/mobility/traci/TraCIColor.h"
 #include "veins/modules/mobility/traci/TraCIConnection.h"
 #include "veins/modules/mobility/traci/TraCICoord.h"
-#include "veins/modules/mobility/traci/VehicleSignal.h"
-#include "veins/modules/mobility/traci/TraCIRegionOfInterest.h"
-
-namespace veins {
-
-class TraCICommandInterface;
-class MobileHostObstacle;
 
 /**
  * @brief
@@ -58,51 +51,69 @@ class MobileHostObstacle;
  *
  * See the Veins website <a href="http://veins.car2x.org/"> for a tutorial, documentation, and publications </a>.
  *
- * @author Christoph Sommer, David Eckhoff, Falko Dressler, Zheng Yao, Tobias Mayer, Alvaro Torres Cortes, Luca Bedogni, Ion Turcanu
+ * @author Christoph Sommer, David Eckhoff, Falko Dressler, Zheng Yao, Tobias Mayer, Alvaro Torres Cortes, Luca Bedogni
  *
  * @see TraCIMobility
  * @see TraCIScenarioManagerLaunchd
  *
  */
-class VEINS_API TraCIScenarioManager : public cSimpleModule, public cISimulationLifecycleListener {
+
+typedef std::tuple<Coord, Coord, std::vector<GridCoord>> HostPos;
+
+namespace Veins {
+
+class TraCICommandInterface;
+
+class TraCIScenarioManager : public cSimpleModule
+{
 public:
-    static const simsignal_t traciInitializedSignal;
-    static const simsignal_t traciModulePreInitSignal;
-    static const simsignal_t traciModuleAddedSignal;
-    static const simsignal_t traciModuleRemovedSignal;
-    static const simsignal_t traciModuleUpdatedSignal;
-    static const simsignal_t traciTrafficLightPreInitSignal;
-    static const simsignal_t traciTrafficLightAddedSignal;
-    static const simsignal_t traciTrafficLightRemovedSignal;
-    static const simsignal_t traciTrafficLightUpdatedSignal;
-    static const simsignal_t traciTimestepBeginSignal;
-    static const simsignal_t traciTimestepEndSignal;
+
+    enum VehicleSignal
+    {
+        VEH_SIGNAL_UNDEF = -1,
+        VEH_SIGNAL_NONE = 0,
+        VEH_SIGNAL_BLINKER_RIGHT = 1,
+        VEH_SIGNAL_BLINKER_LEFT = 2,
+        VEH_SIGNAL_BLINKER_EMERGENCY = 4,
+        VEH_SIGNAL_BRAKELIGHT = 8,
+        VEH_SIGNAL_FRONTLIGHT = 16,
+        VEH_SIGNAL_FOGLIGHT = 32,
+        VEH_SIGNAL_HIGHBEAM = 64,
+        VEH_SIGNAL_BACKDRIVE = 128,
+        VEH_SIGNAL_WIPER = 256,
+        VEH_SIGNAL_DOOR_OPEN_LEFT = 512,
+        VEH_SIGNAL_DOOR_OPEN_RIGHT = 1024,
+        VEH_SIGNAL_EMERGENCY_BLUE = 2048,
+        VEH_SIGNAL_EMERGENCY_RED = 4096,
+        VEH_SIGNAL_EMERGENCY_YELLOW = 8192
+    };
+
+    static const std::string TRACI_INITIALIZED_SIGNAL_NAME;
 
     TraCIScenarioManager();
-    ~TraCIScenarioManager() override;
-    int numInitStages() const override
+    ~TraCIScenarioManager();
+    virtual int numInitStages() const
     {
         return std::max(cSimpleModule::numInitStages(), 2);
     }
-    void initialize(int stage) override;
-    void preNetworkFinish();
-    void finish() override;
-    void handleMessage(cMessage* msg) override;
-    virtual void handleSelfMsg(cMessage* msg);
+    virtual void initialize(int stage);
+    virtual void finish();
+    virtual void handleMessage(cMessage *msg);
+    virtual void handleSelfMsg(cMessage *msg);
 
     bool isConnected() const
     {
-        return static_cast<bool>(connection);
-    }
-
-    TraCICommandInterface* getCommandInterface() const
-    {
-        return commandIfc.get();
+        return (connection);
     }
 
     TraCIConnection* getConnection() const
     {
-        return connection.get();
+        return connection;
+    }
+
+    TraCICommandInterface* getCommandInterface() const
+    {
+        return commandIfc;
     }
 
     bool getAutoShutdownTriggered()
@@ -112,21 +123,24 @@ public:
 
     const std::map<std::string, cModule*>& getManagedHosts()
     {
-        return hosts;
+        return hostModules;
     }
 
-    /**
-     * Predicate indicating a successful connection to the TraCI server.
-     *
-     * @note Once the connection has been established, this will return true even when the connection has been torn down again.
-     */
-    bool isUsable() const
+    std::map<std::string, std::tuple<Coord, Coord, std::vector<GridCoord>>>& getUnequippedHosts()
     {
-        return traciInitialized;
+        return unequippedHostPositions;
     }
+
+    std::map<std::string, HostPos*>* getHostsGrid()
+    {
+        return hostsGrid;
+    }
+    size_t carGridCols;
+    size_t carGridRows;
+    double carCellSize;
 
 protected:
-    bool traciInitialized = false; /**< Flag indicating whether the init_traci routine has been run. Note that it will change to false again once set, even during shutdown. */
+    bool debug; /**< whether to emit debug messages */
     simtime_t connectAt; /**< when to connect to TraCI server (must be the initial timestep of the server) */
     simtime_t firstStepAt; /**< when to start synchronizing with the TraCI server (-1: immediately after connecting) */
     simtime_t updateInterval; /**< time interval of hosts' position updates */
@@ -143,21 +157,33 @@ protected:
     std::string trafficLightModuleDisplayString; /**< module displayString to be used in the simulation for each managed vehicle */
     std::vector<std::string> trafficLightModuleIds; /**< list of traffic light module ids that is subscribed to (whitelist) */
 
+    uint32_t vehicleNameCounter;
+    std::vector<std::string> vehicleTypeIds;
+    std::map<int, std::queue<std::string> > vehicleInsertQueue;
+    std::set<std::string> queuedVehicles;
+    std::vector<std::string> routeIds;
+    int vehicleRngIndex;
+    int numVehicles;
+
+    cRNG* mobRng;
+
     bool autoShutdown; /**< Shutdown module as soon as no more vehicles are in the simulation */
     double penetrationRate;
     bool ignoreGuiCommands; /**< whether to ignore all TraCI commands that only make sense when the server has a graphical user interface */
-    int order; // specific position in the multi-client execution order of the TraCI server to request upon connecting (-1: do not request a position)
-    bool ignoreUnknownSubscriptionResults; // whether to (try and) ignore any subscription result we did not request (but another client might have)
-    TraCIRegionOfInterest roi; /**< Can return whether a given position lies within the simulation's region of interest. Modules are destroyed and re-created as managed vehicles leave and re-enter the ROI */
+    std::list<std::string> roiRoads; /**< which roads (e.g. "hwy1 hwy2") are considered to consitute the region of interest, if not empty */
+    std::list<std::pair<TraCICoord, TraCICoord> > roiRects; /**< which rectangles (e.g. "0,0-10,10 20,20-30,30) are considered to consitute the region of interest, if not empty */
+
     double areaSum;
 
     AnnotationManager* annotations;
-    std::unique_ptr<TraCIConnection> connection;
-    std::unique_ptr<TraCICommandInterface> commandIfc;
+    TraCIConnection* connection;
+    TraCICommandInterface* commandIfc;
 
     size_t nextNodeVectorIndex; /**< next OMNeT++ module vector index to use */
-    std::map<std::string, cModule*> hosts; /**< vector of all hosts managed by us */
-    std::set<std::string> unEquippedHosts;
+    std::map<std::string, cModule*> hostModules; /**< vector of all hosts managed by us */
+    std::map<std::string, HostPos> unequippedHostPositions; /**< vector of all unequipped hosts' positions */
+    std::map<std::string, HostPos> equippedHostPositions; /**< vector of all equipped hosts' positions */
+    std::map<std::string, HostPos*>* hostsGrid; /**< array representing all hosts as located in the grid */
     std::set<std::string> subscribedVehicles; /**< all vehicles we have already subscribed to */
     std::map<std::string, cModule*> trafficLights; /**< vector of all traffic lights managed by us */
     uint32_t activeVehicleCount; /**< number of vehicles, be it parking or driving **/
@@ -168,20 +194,44 @@ protected:
     cMessage* executeOneTimestepTrigger; /**< self-message scheduled for when to next call executeOneTimestep */
 
     BaseWorldUtility* world;
-    std::map<const BaseMobility*, const MobileHostObstacle*> vehicleObstacles;
-    VehicleObstacleControl* vehicleObstacleControl;
+    BaseConnectionManager* cc;
 
     void executeOneTimestep(); /**< read and execute all commands for the next timestep */
 
     virtual void init_traci();
 
-    virtual void preInitializeModule(cModule* mod, const std::string& nodeId, const Coord& position, const std::string& road_id, double speed, Heading heading, VehicleSignalSet signals);
-    virtual void updateModulePosition(cModule* mod, const Coord& p, const std::string& edge, double speed, Heading heading, VehicleSignalSet signals);
-    void addModule(std::string nodeId, std::string type, std::string name, std::string displayString, const Coord& position, std::string road_id = "", double speed = -1, Heading heading = Heading::nan, VehicleSignalSet signals = {VehicleSignal::undefined}, double length = 0, double height = 0, double width = 0);
+    virtual void preInitializeModule(cModule* mod, const std::string& nodeId, const Coord& position,
+            const std::string& road_id, double speed, double angle, double elev_angle, VehicleSignal signals);
+    virtual void updateModulePosition(cModule* mod, const Coord& p, const std::string& edge, double speed, double angle,
+            double elev_angle, VehicleSignal signals);
+    void addModule(std::string nodeId, std::string type, std::string name, std::string displayString,
+            const Coord& position, std::string road_id = "", double speed = -1, double angle = -1, double elev_angle =
+                    -1, VehicleSignal signals = VehicleSignal::VEH_SIGNAL_UNDEF, double length = 0, double height = 0, double width = 0);
     cModule* getManagedModule(std::string nodeId); /**< returns a pointer to the managed module named moduleName, or 0 if no module can be found */
     void deleteManagedModule(std::string nodeId);
 
     bool isModuleUnequipped(std::string nodeId); /**< returns true if this vehicle is Unequipped */
+    void addToHostPosMap(std::map<std::string, HostPos>& hostPosMap, std::string nodeId, const Coord& position,
+            double angle, double elev_angle); /**<adds a host with the given values to the given map*/
+    void updateHostPosMap(std::map<std::string, HostPos>& hostPosMap, std::string nodeId, const Coord& position,
+            double angle, double elev_angle); /**<updates a host with the given values in the given map*/
+    void eraseFromHostPosMap(std::map<std::string, HostPos>& hostPosMap, std::string nodeId); /**<deletes a host from the given map*/
+
+    /**
+     * returns whether a given position lies within the simulation's region of interest.
+     * Modules are destroyed and re-created as managed vehicles leave and re-enter the ROI
+     */
+    bool isInRegionOfInterest(const TraCICoord& position, std::string road_id, double speed, double angle);
+
+    /**
+     * adds a new vehicle to the queue which are tried to be inserted at the next SUMO time step;
+     */
+    void insertNewVehicle();
+
+    /**
+     * tries to add all vehicles in the vehicle queue to SUMO;
+     */
+    void insertVehicles();
 
     void subscribeToVehicleVariables(std::string vehicleId);
     void unsubscribeFromVehicleVariables(std::string vehicleId);
@@ -204,18 +254,18 @@ protected:
      */
     TypeMapping parseMappings(std::string parameter, std::string parameterName, bool allowEmpty = false);
 
-    virtual int getPortNumber() const;
-
-    void lifecycleEvent(SimulationLifecycleEventType eventType, cObject* details) override;
-    void listenerRemoved() override;
+private:
+    const omnetpp::simsignal_t traciInitializedSignal;
 };
 
-class VEINS_API TraCIScenarioManagerAccess {
+class TraCIScenarioManagerAccess
+{
 public:
     TraCIScenarioManager* get()
     {
         return FindModule<TraCIScenarioManager*>::findGlobalModule();
     };
 };
+}
 
-} // namespace veins
+#endif

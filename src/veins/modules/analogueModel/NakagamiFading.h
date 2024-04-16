@@ -4,8 +4,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -21,13 +19,13 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef ANALOGUEMODEL_NAKAGAMIFADING_H
+#define ANALOGUEMODEL_NAKAGAMIFADING_H
 
 #include "veins/base/phyLayer/AnalogueModel.h"
 #include "veins/base/modules/BaseWorldUtility.h"
+#include "veins/base/phyLayer/MappingBase.h"
 #include "veins/base/messages/AirFrame_m.h"
-
-namespace veins {
 
 /**
  * @brief
@@ -42,28 +40,29 @@ namespace veins {
  *
  * @ingroup analogueModels
  */
-class VEINS_API NakagamiFading : public AnalogueModel {
+class NakagamiFading: public AnalogueModel {
 
-public:
-    NakagamiFading(cComponent* owner, bool constM, double m)
-        : AnalogueModel(owner)
-        , constM(constM)
-        , m(m)
-    {
-    }
+	public:
+		NakagamiFading(bool constM, double m, bool debug) :
+		    constM(constM),
+		    m(m),
+			debug(debug) {}
 
-    ~NakagamiFading() override
-    {
-    }
+		virtual ~NakagamiFading() {}
 
-    void filterSignal(Signal* signal) override;
+	virtual void filterSignal(AirFrame *frame, const Coord& sendersPos, const Coord& receiverPos);
 
-protected:
-    /** @brief Whether to use a constant m or a m based on distance */
-    bool constM;
 
-    /** @brief The value of the coefficient m */
-    double m;
+	protected:
+
+		/** @brief Whether to use a constant m or a m based on distance */
+		bool constM;
+
+		/** @brief The value of the coefficient m */
+		double m;
+
+		/** @brief Whether debug messages should be displayed. */
+		bool debug;
 };
 
-} // namespace veins
+#endif /* ANALOGUEMODEL_NAKAGAMIFADING_H */

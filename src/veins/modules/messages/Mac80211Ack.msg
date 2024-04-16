@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,9 +18,10 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-import veins.modules.messages.Mac80211Pkt;
-
-namespace veins;
+cplusplus {{
+	#include "veins/modules/messages/Mac80211Pkt_m.h"
+}}
+class Mac80211Pkt;
 
 packet Mac80211Ack extends Mac80211Pkt {
     unsigned long messageId; // The ID of the aknowledged packet

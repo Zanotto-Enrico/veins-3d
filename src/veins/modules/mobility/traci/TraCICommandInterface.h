@@ -20,7 +20,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef VEINS_MOBILITY_TRACI_TRACICOMMANDINTERFACE_H_
+#define VEINS_MOBILITY_TRACI_TRACICOMMANDINTERFACE_H_
 
 #include <list>
 #include <string>
@@ -33,9 +34,9 @@
 #include "veins/modules/world/traci/trafficLight/TraCITrafficLightProgram.h"
 #include "veins/modules/utility/HasLogProxy.h"
 
-namespace veins {
+namespace Veins {
 
-class VEINS_API TraCICommandInterface : public HasLogProxy {
+class TraCICommandInterface : public HasLogProxy {
 public:
     TraCICommandInterface(cComponent* owner, TraCIConnection& c, bool ignoreGuiCommands);
     bool isIgnoringGuiCommands();
@@ -71,7 +72,6 @@ public:
     std::pair<uint32_t, std::string> getVersion();
     void setApiVersion(uint32_t apiVersion);
     std::pair<double, double> getLonLat(const Coord&);
-    void setOrder(int32_t order);
 
     unsigned getApiVersion() const
     {
@@ -112,19 +112,6 @@ public:
      */
     double getDistance(const Coord& position1, const Coord& position2, bool returnDrivingDistance);
 
-    /**
-     * Reads two positions on the road network and an indicator whether the air or the driving distance shall be computed. Returns the according distance.
-     *
-     * @param e1 id of first edge
-     * @param p1 position along first edge
-     * @param e2 id of second edge
-     * @param p2 position along second edge
-     * @param returnDrivingDistance whether to return the driving distance or the air distance
-     * @return the distance between the two positions
-     *
-     */
-    double getDistanceRoad(std::string e1, double p1, std::string e2, double p2, bool returnDrivingDistance);
-
     // Vehicle methods
     /**
      * @brief Adds a vehicle to the simulation.
@@ -140,7 +127,8 @@ public:
      * @return Success indication
      */
     bool addVehicle(std::string vehicleId, std::string vehicleTypeId, std::string routeId, simtime_t emitTime_st = 0, double emitPosition = DEPART_POSITION_BASE, double emitSpeed = DEPART_SPEED_MAX, int8_t emitLane = DEPART_LANE_BEST);
-    class VEINS_API Vehicle {
+    class Vehicle
+    {
     public:
         Vehicle(TraCICommandInterface* traci, std::string nodeId)
             : traci(traci)
@@ -158,6 +146,7 @@ public:
         void newRoute(std::string roadId);
         void setParking();
         std::string getRoadId();
+        std::string getCurrentRoadOnRoute();
         std::string getLaneId();
         double getMaxSpeed();
         double getLanePosition();
@@ -264,36 +253,7 @@ public:
          */
         double getAccumulatedWaitingTime() const;
 
-        /**
-         * Get the vehicle's stop state which carries information about whether it is currently stopping and in which context.
-         *
-         * @return the stop state which is a bit field defined as follows:
-         *     1 * stopped
-         * +   2 * parking
-         * +   4 * triggered
-         * +   8 * containerTriggered
-         * +  16 * atBusStop
-         * +  32 * atContainerStop
-         * +  64 * atChargingStation
-         * + 128 * atParkingArea
-         */
-        uint8_t getStopState() const;
-
-        /**
-         * Get whether the vehicle is currently stopping at a scheduled stop (e.g. a bus stop or after using stopAt).
-         */
-        bool isStopReached() const;
-
-        /**
-         * Sets the vehicle's current destination edge, causing its route to be rebuilt.
-         */
-        void changeTarget(const std::string& newTarget) const;
-
         std::pair<std::string, double> getLeader(const double distance);
-
-        std::vector<std::tuple<std::string, int, double, char>> getNextTls();
-
-        double getSlope();
 
     protected:
         TraCICommandInterface* traci;
@@ -307,7 +267,8 @@ public:
 
     // Road methods
     std::list<std::string> getRoadIds();
-    class VEINS_API Road {
+    class Road
+    {
     public:
         Road(TraCICommandInterface* traci, std::string roadId)
             : traci(traci)
@@ -316,9 +277,13 @@ public:
             connection = &traci->connection;
         }
 
-        std::string getName();
         double getCurrentTravelTime();
         double getMeanSpeed();
+        std::string getName();
+        std::string getType();
+
+        void getParameter(const std::string& parameter, double& value);
+        void getParameter(const std::string& parameter, std::string& value);
 
     protected:
         TraCICommandInterface* traci;
@@ -332,19 +297,9 @@ public:
 
     // Lane methods
     std::list<std::string> getLaneIds();
-    class VEINS_API Lane {
+    class Lane
+    {
     public:
-        struct VEINS_API Link {
-            std::string approachedLane;
-            std::string approachedInternal;
-            bool hasPrio;
-            bool isOpen;
-            bool hasFoe;
-            std::string state;
-            std::string direction;
-            double length;
-        };
-
         Lane(TraCICommandInterface* traci, std::string laneId)
             : traci(traci)
             , laneId(laneId)
@@ -352,30 +307,13 @@ public:
             connection = &traci->connection;
         }
 
-        std::list<Link> getLinks();
         std::list<Coord> getShape();
         std::string getRoadId();
         double getLength();
+        double getWidth();
         double getMaxSpeed();
         double getMeanSpeed();
-        double getWidth();
         void setDisallowed(std::list<std::string> disallowedClasses);
-
-        /**
-         * Get list of allowed vehicle classes for this lane.
-         * An empty list means all classes are allowed.
-         */
-        std::list<std::string> getAllowed() const;
-
-        /**
-         * Get list of disallowed vehicle classes for this lane.
-         */
-        std::list<std::string> getDisallowed() const;
-
-        /**
-         * Get list of vehicle classes that may change to the left/right neighboring lane.
-         */
-        std::list<std::string> getChangePermissions(int8_t direction) const;
 
     protected:
         TraCICommandInterface* traci;
@@ -389,7 +327,8 @@ public:
 
     // Trafficlight methods
     std::list<std::string> getTrafficlightIds();
-    class VEINS_API Trafficlight {
+    class Trafficlight
+    {
     public:
         Trafficlight(TraCICommandInterface* traci, std::string trafficLightId)
             : traci(traci)
@@ -425,7 +364,7 @@ public:
 
     // LaneAreaDetector methods
     std::list<std::string> getLaneAreaDetectorIds();
-    class VEINS_API LaneAreaDetector {
+    class LaneAreaDetector {
     public:
         LaneAreaDetector(TraCICommandInterface* traci, std::string laneAreaDetectorId)
             : traci(traci)
@@ -449,7 +388,8 @@ public:
     // Polygon methods
     std::list<std::string> getPolygonIds();
     void addPolygon(std::string polyId, std::string polyType, const TraCIColor& color, bool filled, int32_t layer, const std::list<Coord>& points);
-    class VEINS_API Polygon {
+    class Polygon
+    {
     public:
         Polygon(TraCICommandInterface* traci, std::string polyId)
             : traci(traci)
@@ -460,9 +400,7 @@ public:
 
         std::string getTypeId();
         std::list<Coord> getShape();
-        TraCIColor getColor();
-        bool getFilled();
-        double getLineWidth();
+        double getLayer();
         void setShape(const std::list<Coord>& points);
         void remove(int32_t layer);
 
@@ -479,7 +417,8 @@ public:
     // Poi methods
     std::list<std::string> getPoiIds();
     void addPoi(std::string poiId, std::string poiType, const TraCIColor& color, int32_t layer, const Coord& pos);
-    class VEINS_API Poi {
+    class Poi
+    {
     public:
         Poi(TraCICommandInterface* traci, std::string poiId)
             : traci(traci)
@@ -503,7 +442,8 @@ public:
 
     // Junction methods
     std::list<std::string> getJunctionIds();
-    class VEINS_API Junction {
+    class Junction
+    {
     public:
         Junction(TraCICommandInterface* traci, std::string junctionId)
             : traci(traci)
@@ -514,6 +454,7 @@ public:
 
         Coord getPosition();
         std::list<Coord> getShape();
+        void getParameter(const std::string& parameter, std::string& value);
 
     protected:
         TraCICommandInterface* traci;
@@ -527,8 +468,8 @@ public:
 
     // Route methods
     std::list<std::string> getRouteIds();
-    void addRoute(std::string routeId, const std::list<std::string>& edges);
-    class VEINS_API Route {
+    class Route
+    {
     public:
         Route(TraCICommandInterface* traci, std::string routeId)
             : traci(traci)
@@ -553,32 +494,10 @@ public:
     std::list<std::string> getVehicleTypeIds();
     double getVehicleTypeMaxSpeed(std::string typeId);
     void setVehicleTypeMaxSpeed(std::string typeId, double maxSpeed);
-    class VEINS_API VehicleType {
-    public:
-        VehicleType(TraCICommandInterface* traci, std::string typeId)
-            : traci(traci)
-            , typeId(typeId)
-        {
-            connection = &traci->connection;
-        }
-        double getMaxSpeed();
-        std::string getVehicleClass();
-        std::string getShapeClass();
-        void setMaxSpeed(double maxSpeed);
-
-    protected:
-        TraCICommandInterface* traci;
-        TraCIConnection* connection;
-        std::string typeId;
-    };
-    VehicleType vehicleType(std::string typeId)
-    {
-        return VehicleType(this, typeId);
-    }
 
     // GuiView methods
     std::list<std::string> getGuiViewIds();
-    class VEINS_API GuiView : public HasLogProxy {
+    class GuiView : public HasLogProxy {
     public:
         GuiView(TraCICommandInterface* traci, std::string viewId)
             : HasLogProxy(traci->owner)
@@ -628,10 +547,11 @@ private:
     double genericGetDouble(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr);
     void genericSetDouble(uint8_t commandId, std::string objectId, uint8_t variableId, double value);
     simtime_t genericGetTime(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr);
-    uint8_t genericGetUnsignedByte(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr);
     int32_t genericGetInt(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr);
-    std::list<std::string> genericGetStringList(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr, const TraCIBuffer* buf2 = nullptr);
+    std::list<std::string> genericGetStringList(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr);
     std::list<Coord> genericGetCoordList(uint8_t commandId, std::string objectId, uint8_t variableId, uint8_t responseId, TraCIConnection::Result* result = nullptr);
 };
 
-} // namespace veins
+}
+
+#endif

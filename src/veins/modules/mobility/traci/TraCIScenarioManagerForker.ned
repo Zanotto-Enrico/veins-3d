@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -37,12 +35,9 @@ package org.car2x.veins.modules.mobility.traci;
 simple TraCIScenarioManagerForker extends TraCIScenarioManager
 {
     parameters:
-        @class(veins::TraCIScenarioManagerForker);
-        string commandLine = default("$command --remote-port $port --seed $seed --configuration-file $configFile"); // command line for running TraCI server (substituting $command, $configFile, $seed, $port)
-        string command = default("sumo"); // substitution for $command parameter
+        @class(Veins::TraCIScenarioManagerForker);
+        string commandLine = default("sumo --remote-port $port --seed $seed --configuration-file $configFile"); // command line for running TraCI server (substituting $configFile, $seed, $port)
         string configFile = default("my.sumo.cfg"); // substitution for $configFile parameter
-        port = default(-1);  // substitution for $port parameter (-1: automatic)
-        order = default(-1); // specific position in the multi-client execution order of the TraCI server to request upon connecting (-1: do not request a position)
-        ignoreUnknownSubscriptionResults = default(false); // whether to (try and) ignore any subscription result we did not request (but another client might have)
+        port = default(-1);  // substitution for $port parameter (-1: autodetect)
 }
 

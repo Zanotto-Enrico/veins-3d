@@ -39,11 +39,10 @@
 // The SUMO hexadecimal constants.
 // Authors: Andres Acosta, Jairo Espinosa, Jorge Espinosa.
 
-#pragma once
+#ifndef TRACICONSTANTS_H
+#define TRACICONSTANTS_H
 
-#include <cstdint>
-
-namespace veins {
+namespace Veins {
 namespace TraCIConstants {
 
 const uint32_t TRACI_VERSION = 19;
@@ -169,10 +168,7 @@ const uint8_t ID_COUNT = 0x01;
 const uint8_t ID_LIST = 0x00;
 const uint8_t JAM_LENGTH_METERS = 0x19;
 const uint8_t JAM_LENGTH_VEHICLE = 0x18;
-const int8_t LANECHANGE_LEFT = 0x01;
-const int8_t LANECHANGE_RIGHT = -0x01;
 const uint8_t LANE_ALLOWED = 0x34;
-const uint8_t LANE_CHANGES = 0x3c;
 const uint8_t LANE_DISALLOWED = 0x35;
 const uint8_t LANE_EDGE_ID = 0x31;
 const uint8_t LANE_LINKS = 0x33;
@@ -349,7 +345,6 @@ const uint8_t VAR_MIN_EXPECTED_VEHICLES = 0x7d;
 const uint8_t VAR_MOVE_TO = 0x5c;
 const uint8_t VAR_MOVE_TO_VTD = 0xb4; // Veins specific (called MOVE_TO_XY in TraCI)
 const uint8_t VAR_NAME = 0x1b;
-const uint8_t VAR_NEIGHBORS = 0xbf;
 const uint8_t VAR_NET_BOUNDING_BOX = 0x7c;
 const uint8_t VAR_NEXT_EDGE = 0xc1;
 const uint8_t VAR_NEXT_STOPS = 0x73;
@@ -410,4 +405,5 @@ const uint8_t VAR_WAITING_TIME_ACCUMULATED = 0x87; // Veins specific (called VAR
 const uint8_t VAR_WIDTH = 0x4d;
 
 } // namespace TraCIConstants
-} // namespace veins
+}
+#endif

@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,11 +18,10 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 
-#pragma once
+#ifndef TraCIDemo11p_H
+#define TraCIDemo11p_H
 
-#include "veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
-
-namespace veins {
+#include "veins/modules/application/ieee80211p/BaseWaveApplLayer.h"
 
 /**
  * @brief
@@ -32,29 +29,27 @@ namespace veins {
  * it will send a message out to other cars containing the blocked road id.
  * Receiving cars will then trigger a reroute via TraCI.
  * When channel switching between SCH and CCH is enabled on the MAC, the message is
- * instead send out on a service channel following a Service Advertisement
+ * instead send out on a service channel following a WAVE Service Advertisement
  * on the CCH.
  *
  * @author Christoph Sommer : initial DemoApp
- * @author David Eckhoff : rewriting, moving functionality to DemoBaseApplLayer, adding WSA
+ * @author David Eckhoff : rewriting, moving functionality to BaseWaveApplLayer, adding WSA
  *
  */
 
-class VEINS_API TraCIDemo11p : public DemoBaseApplLayer {
-public:
-    void initialize(int stage) override;
+class TraCIDemo11p : public BaseWaveApplLayer {
+	public:
+		virtual void initialize(int stage);
+	protected:
+		simtime_t lastDroveAt;
+		bool sentMessage;
+		int currentSubscribedServiceId;
+	protected:
+        virtual void onWSM(WaveShortMessage* wsm);
+        virtual void onWSA(WaveServiceAdvertisment* wsa);
 
-protected:
-    simtime_t lastDroveAt;
-    bool sentMessage;
-    int currentSubscribedServiceId;
-
-protected:
-    void onWSM(BaseFrame1609_4* wsm) override;
-    void onWSA(DemoServiceAdvertisment* wsa) override;
-
-    void handleSelfMsg(cMessage* msg) override;
-    void handlePositionUpdate(cObject* obj) override;
+        virtual void handleSelfMsg(cMessage* msg);
+		virtual void handlePositionUpdate(cObject* obj);
 };
 
-} // namespace veins
+#endif

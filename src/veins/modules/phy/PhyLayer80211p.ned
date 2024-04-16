@@ -3,8 +3,6 @@
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -27,15 +25,15 @@ import org.car2x.veins.base.phyLayer.BasePhyLayer;
 //
 // Adaptation of the PhyLayer class for 802.11p.
 //
-// @see DemoBaseApplLayer
+// @see BaseWaveApplLayer
 // @see Nic80211p
 // @see Mac1609_4
 //
 simple PhyLayer80211p extends BasePhyLayer
 {
     parameters:
-        @class(veins::PhyLayer80211p);
-        antennaOffsetZ = default(1.895 m);
+        @class(PhyLayer80211p);
+        headerLength @unit(bit)  = default(46 bit); //defines the length of the phy header (SIGNAL without PREAMBLE)
         //defines the CCA threshold
         double ccaThreshold @unit(dBm) = default(-65 dBm);
         //enables/disables collection of statistics about collision. notice that

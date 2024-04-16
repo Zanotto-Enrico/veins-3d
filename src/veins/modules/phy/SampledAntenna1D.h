@@ -1,32 +1,16 @@
-//
-// Copyright (C) 2016 Alexander Brummer <alexander.brummer@fau.de>
-// Copyright (C) 2018 Fabian Bronner <fabian.bronner@ccs-labs.org>
-//
-// Documentation for these modules is at http://veins.car2x.org/
-//
-// SPDX-License-Identifier: GPL-2.0-or-later
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
+/*
+ * SampledAntenna1D.h
+ *
+ *  Created on: Jun 19, 2016
+ *      Author: Alexander Brummer
+ */
 
-#pragma once
+#ifndef SRC_VEINS_MODULES_PHY_SAMPLEDANTENNA1D_H_
+#define SRC_VEINS_MODULES_PHY_SAMPLEDANTENNA1D_H_
 
 #include "veins/base/phyLayer/Antenna.h"
+#include "veins/base/phyLayer/MappingUtils.h"
 #include <vector>
-
-namespace veins {
 
 /**
  * @brief
@@ -66,7 +50,7 @@ namespace veins {
  * @see Antenna
  * @see BasePhyLayer
  */
-class VEINS_API SampledAntenna1D : public Antenna {
+class SampledAntenna1D: public Antenna {
 public:
     /**
      * @brief Constructor for the sampled antenna.
@@ -75,7 +59,7 @@ public:
      * @param offsetType        - name of random distribution to use for the random offset of the samples
      * @param offsetParams      - contains the parameters for the offset random distribution
      * @param rotationType      - name of random distribution to use for the random rotation of the whole antenna
-     * @param rotationParams    - contains the parameters for the rotation random distribution
+     * @param rotationparams    - contains the parameters for the rotation random distribution
      * @param rng               - pointer to the random number generator to use
      */
     SampledAntenna1D(std::vector<double>& values, std::string offsetType, std::vector<double>& offsetParams, std::string rotationType, std::vector<double>& rotationParams, cRNG* rng);
@@ -85,7 +69,7 @@ public:
      *
      * Deletes the mapping used for storing the antenna samples.
      */
-    ~SampledAntenna1D() override;
+    virtual ~SampledAntenna1D();
 
     /**
      * @brief Calculates this antenna's gain based on the direction the signal is coming from/sent in.
@@ -96,16 +80,16 @@ public:
      * @return Returns the gain this antenna achieves depending on the computed direction.
      * If the angle is within two samples, linear interpolation is applied.
      */
-    double getGain(Coord ownPos, Coord ownOrient, Coord otherPos) override;
+    double getGain(Coord ownPos, Coord ownOrient, Coord otherPos);
 
-    double getLastAngle() override;
+    double getLastAzi();
+    double getLastEle();
 
 private:
     /**
-     * @brief Used to store the antenna's samples.
+     * @brief Mapping which is used to store the antenna's samples. Provides automatic linear interpolation.
      */
-    std::vector<double> antennaGains;
-    double distance;
+    Mapping* samples;
 
     /**
      * @brief An optional random rotation of the antenna is stored in this field and applied every time
@@ -116,4 +100,4 @@ private:
     double lastAngle;
 };
 
-} // namespace veins
+#endif /* SRC_VEINS_MODULES_PHY_SAMPLEDANTENNA1D_H_ */

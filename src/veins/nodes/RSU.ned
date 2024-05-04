@@ -26,6 +26,7 @@ import org.car2x.veins.modules.nic.Nic80211p;
 module RSU
 {
     parameters:
+        @class(RSU);
         string applType; //type of the application layer
         string nicType = default("Nic80211p"); // type of network interface card
     gates:
@@ -41,7 +42,7 @@ module RSU
                 @display("p=60,166");
         }
 
-        mobility: BaseMobility {
+        mobility: RsuMobility {
             parameters:
                 @display("p=130,172;i=block/cogwheel");
         }

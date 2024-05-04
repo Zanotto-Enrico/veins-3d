@@ -72,6 +72,22 @@ void Obstacle::setShape(Coords shape, double height )
     }
 }
 
+void Obstacle::setMesh(Mesh new_mesh)
+{
+    bboxP1 = Coord(1e7, 1e7);
+    bboxP2 = Coord(-1e7, -1e7);
+    std::vector<Triangle>::iterator i = new_mesh.begin();
+
+    for (; i != new_mesh.end(); ++i ) {
+        bboxP1.x = std::min(i->p1.x, std::min(i->p2.x, std::min(i->p3.x, bboxP1.x)));
+        bboxP1.y = std::min(i->p1.y, std::min(i->p2.y, std::min(i->p3.y, bboxP1.y)));
+        bboxP2.x = std::max(i->p1.x, std::max(i->p2.x, std::max(i->p3.x, bboxP2.x)));
+        bboxP2.y = std::max(i->p1.y, std::max(i->p2.y, std::max(i->p3.y, bboxP2.y)));
+        this->height = std::max(std::max(i->p1.z, i->p2.z),i->p3.z);
+    }
+    mesh = new_mesh;
+}
+
 const Obstacle::Coords& Obstacle::getShape() const
 {
     return coords;

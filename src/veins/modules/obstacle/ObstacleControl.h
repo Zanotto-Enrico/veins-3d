@@ -40,6 +40,7 @@ namespace Veins {
 class ObstacleControl : public cSimpleModule
 {
 	public:
+		using Mesh = std::vector<Triangle>;
 		~ObstacleControl();
 		void initialize(int stage);
 		int numInitStages() const { return 2; }
@@ -49,6 +50,7 @@ class ObstacleControl : public cSimpleModule
 
 		void addFromXml(cXMLElement* xml);
 		void addFromTypeAndShape(std::string id, std::string typeId, std::vector<Coord> shape, double height);
+		void addFromTypeAndMesh(std::string id, std::string typeId, Mesh mesh);
 		void add(Obstacle obstacle, bool inner = false);
 		void erase(const Obstacle* obstacle, bool inner = false);
 		bool isTypeSupported(std::string type);

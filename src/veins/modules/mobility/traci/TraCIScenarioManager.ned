@@ -59,6 +59,7 @@ simple TraCIScenarioManager
         // *.manager.moduleDisplayString = ""
         // </pre>
         string moduleDisplayString = default("*='i=veins/node/car;is=vs'");
+        string meshPath = default(".");
         string trafficLightModuleType = default("");  // module type to be used in the simulation for each managed traffic light
         string trafficLightModuleName = default("tls");  // module name to be used in the simulation for each managed traffic light
         string trafficLightFilter = default("");  // filter string to select which tls shall be subscribed, list sumo IDs separated by spaces

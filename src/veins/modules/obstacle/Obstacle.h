@@ -39,6 +39,7 @@ class Obstacle {
 
 		void setShape(Coords shape, double height);
 		void setShape(Coords shape);
+		void setMesh(Mesh new_mesh);
 		const Coords& getShape() const;
 		const Mesh& getMesh() const;
     	const double getHeight() const;

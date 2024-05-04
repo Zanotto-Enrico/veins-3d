@@ -34,6 +34,9 @@
 #include "veins/modules/floor/FloorControl.h"
 #include "veins/modules/tunnel/TunnelControl.h"
 #include "veins/modules/world/traci/trafficLight/TraCITrafficLightInterface.h"
+#include "veins/modules/utility/NBHeightMapper.h"
+#include "veins/nodes/RsuMobility.h"
+#include "veins/nodes/RSU.h"
 
 #define LENGTH 4.5 // assumed vehicle length
 
@@ -424,6 +427,34 @@ void TraCIScenarioManager::init_traci()
         }
     }
 
+    {
+        // update height of all rsu based on the dtm
+        cModule* parentmod = getParentModule();
+        if (!parentmod) {
+        throw cRuntimeError("Parent Module not found (for RSU dtm height adjustment)");
+        }
+        for (int i = 0; i < parentmod->par("numRSU").intValue(); i++) {
+            RSU* currentRSU = dynamic_cast<RSU*>(parentmod->getSubmodule("rsu", i));
+            
+            if (!currentRSU) {
+                throw cRuntimeError("RSU submodule not found");
+            }
+            
+            RsuMobility *mobilityModule = check_and_cast<RsuMobility*>(currentRSU->getSubmodule("mobility"));
+
+            double old_height = mobilityModule->getCurrentPosition().z;
+
+            const NBHeightMapper& hm = NBHeightMapper::get();
+            Veins::TraCIScenarioManager* traciManager = FindModule<Veins::TraCIScenarioManager*>::findGlobalModule();
+            Veins::TraCICommandInterface* traciCI = traciManager->getCommandInterface(); 
+
+            double lon, lat;
+            std::tie(lon, lat) = traciCI->getLonLat(Coord(mobilityModule->getCurrentPosition().x, mobilityModule->getCurrentPosition().y));
+
+            mobilityModule-> makeMove(Coord( mobilityModule->getCurrentPosition().x, mobilityModule->getCurrentPosition().y, hm.getZ(Position(lon, lat)) + old_height));
+        }
+    }
+
     ObstacleControl* obstacles = ObstacleControlAccess().getIfExists();
     if (obstacles) {
         {
@@ -433,16 +464,37 @@ void TraCIScenarioManager::init_traci()
                 std::string id = *i;
                 std::string typeId = commandInterface->polygon(id).getTypeId();
                 if (!obstacles->isTypeSupported(typeId)) continue;
-                std::list<Coord> coords = commandInterface->polygon(id).getShape();
-                double height = commandInterface->polygon(id).getLayer();
-                std::vector<Coord> shape;
-                std::copy(coords.begin(), coords.end(), std::back_inserter(shape));
-                for (auto p : shape) {
-                    if ((p.x < 0) || (p.y < 0) || (p.x > world->getPgs()->x) || (p.y > world->getPgs()->y)) {
-                        EV_WARN << "WARNING: Playground (" << world->getPgs()->x << ", " << world->getPgs()->y << ") will not fit radio obstacle at (" << p.x << ", " << p.y << ")" << endl;
+                
+                std::string meshPath = par("meshPath").stdstringValue();
+                std::ifstream file( meshPath + "/" + id + ".obj");
+                if (file) {
+                    std::vector<Coord> vertices;
+                    std::vector<Triangle> triangles;
+                    std::string line;
+                    while (std::getline(file, line)) {
+                        if (line.substr(0, 2) == "v ") {
+                            // Parse vertex coordinates
+                            double x, y, z;
+                            std::istringstream iss(line.substr(2));
+                            iss >> x >> z >> y;
+                            vertices.push_back(connection->traci2omnet({x, y, z}));
+                        } else if (line.substr(0, 2) == "f ") {
+                            // Parse triangle vertices indices
+                            int v1, v2, v3;
+                            std::istringstream iss(line.substr(2));
+                            iss >> v1 >> v2 >> v3;
+                            Triangle triangle = {vertices[v1 - 1], vertices[v2 - 1], vertices[v3 - 1]};
+                            triangles.push_back(triangle);
+                        }
                     }
+
+                    // Pass triangles to obstacles
+                    obstacles->addFromTypeAndMesh(id, typeId, triangles);
+
+                    file.close();
+                } else {
+                    std::cerr << "Could not find mesh for polygon::: " << id  << std::endl;
                 }
-                obstacles->addFromTypeAndShape(id, typeId, shape, height);
             }
         }
     }

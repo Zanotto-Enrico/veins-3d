@@ -173,6 +173,23 @@ void ObstacleControl::addFromTypeAndShape(std::string id, std::string typeId, st
     }
 }
 
+void ObstacleControl::addFromTypeAndMesh(std::string id, std::string typeId, Mesh mesh)
+{
+    if (!isTypeSupported(typeId)) {
+        throw cRuntimeError("Unsupported obstacle type: \"%s\"", typeId.c_str());
+    }
+    Obstacle obs(id, typeId, getAttenuationPerCut(typeId), getAttenuationPerMeter(typeId));
+    obs.setMesh(mesh);
+
+
+    if (typeId == "innerWall") {
+        add(obs, true);
+    }
+    else {
+        add(obs);
+    }
+}
+
 void ObstacleControl::add(Obstacle obstacle, bool inner)
 {
     Obstacle* o = new Obstacle(obstacle);

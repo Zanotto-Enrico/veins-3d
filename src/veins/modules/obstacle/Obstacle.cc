@@ -211,7 +211,7 @@ double Obstacle::calculateAttenuation(const Coord& senderPos, const Coord& recei
 {
 
     // if obstacles has neither borders nor matter: bail.
-    if (getShape().size() < 2)
+    if (getShape().size() < 2 && getMesh().size() <= 0 )
         return 1;
 
     // if sender is directly above receiver or vice versa: bail
@@ -223,7 +223,7 @@ double Obstacle::calculateAttenuation(const Coord& senderPos, const Coord& recei
     std::multiset<double> intersectAt;
     bool doesIntersect = false;
     const Obstacle::Coords& shape = getShape();
-    if(getHeight() <= 0 )
+    if(getMesh().size() <= 0 )
     {
         Obstacle::Coords::const_iterator i = shape.begin();
         Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
@@ -267,7 +267,7 @@ double Obstacle::calculateAttenuation(const Coord& senderPos, const Coord& recei
 
     // if obstacle is not just a wall, consider distance in obstacle
     double fractionInObstacle = 0;
-    if (shape.size() > 2) {
+    if ( shape.size() > 2 || getMesh().size() > 0) {
         // for distance calculation, make sure every other pair of points marks transition through matter and void, respectively.
         if (senderInside)
             intersectAt.insert(0);

@@ -263,7 +263,7 @@ SignalStats ObstacleControl::calculateAttenuation(const Coord& senderPos, const 
     if (!inner) {
         CacheEntries::const_iterator cacheEntryIter = cacheEntries.find(cacheKey);
         if (cacheEntryIter != cacheEntries.end()) {
-            //return *cacheEntryIter;
+            return cacheEntryIter->second;
         }
     }
 
@@ -318,7 +318,7 @@ SignalStats ObstacleControl::calculateAttenuation(const Coord& senderPos, const 
     // cache result
     if (!inner) {
         if (cacheEntries.size() >= 1000) cacheEntries.clear();
-        //cacheEntries[cacheKey] = ss;
+        cacheEntries[cacheKey] = ss;
     }
 
     return ss;

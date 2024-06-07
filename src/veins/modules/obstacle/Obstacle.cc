@@ -223,7 +223,7 @@ double Obstacle::calculateAttenuation(const Coord& senderPos, const Coord& recei
     std::multiset<double> intersectAt;
     bool doesIntersect = false;
     const Obstacle::Coords& shape = getShape();
-    if(getMesh().size() <= 0 )
+    if(getHeight() <= 0  )
     {
         Obstacle::Coords::const_iterator i = shape.begin();
         Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();

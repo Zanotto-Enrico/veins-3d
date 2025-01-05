@@ -60,6 +60,13 @@ Signal::Signal(Spectrum spec, simtime_t start, simtime_t dur)
 {
 }
 
+void Signal::setStats(SignalStats stats) {
+    this->stats = stats;
+}
+SignalStats Signal::getStats() const{
+    return stats;
+}
+
 const Spectrum& Signal::getSpectrum() const
 {
     return spectrum;

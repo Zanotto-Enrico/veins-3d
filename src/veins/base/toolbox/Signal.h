@@ -24,6 +24,7 @@
 
 #include "veins/veins.h"
 
+#include "veins/SignalStats.h"
 #include "veins/base/utils/POA.h"
 #include "veins/base/utils/Coord.h"
 #include "veins/base/toolbox/Spectrum.h"
@@ -60,6 +61,10 @@ public:
      */
     Signal(Spectrum spec, simtime_t start, simtime_t duration);
     ~Signal() = default;
+
+
+    void setStats(SignalStats stats);
+    SignalStats getStats() const;
 
     /**
      * Get the Spectrum this Signal is defined on.
@@ -496,6 +501,8 @@ private:
     Spectrum spectrum;
 
     std::vector<double> values;
+
+    SignalStats stats;
 
     size_t numDataValues = 0;
     size_t dataOffset = 0;

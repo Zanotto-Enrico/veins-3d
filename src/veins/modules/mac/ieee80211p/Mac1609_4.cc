@@ -28,6 +28,7 @@
 #include "veins/base/phyLayer/PhyToMacControlInfo.h"
 #include "veins/modules/messages/PhyControlMessage_m.h"
 #include "veins/modules/messages/AckTimeOutMessage_m.h"
+#include "veins/modules/Statistics.h"
 
 using namespace veins;
 
@@ -41,8 +42,13 @@ const simsignal_t Mac1609_4::sigSentPacket = registerSignal("org_car2x_veins_mod
 const simsignal_t Mac1609_4::sigSentAck = registerSignal("org_car2x_veins_modules_mac_sigSentAck");
 const simsignal_t Mac1609_4::sigRetriesExceeded = registerSignal("org_car2x_veins_modules_mac_sigRetriesExceeded");
 
+Statistics * statsModule = nullptr;
+
 void Mac1609_4::initialize(int stage)
 {
+    cModule* mod = getModuleByPath("statistics");
+    statsModule = dynamic_cast<Statistics *>(mod);
+
     BaseMacLayer::initialize(stage);
     if (stage == 0) {
 
@@ -553,6 +559,27 @@ void Mac1609_4::setCCAThreshold(double ccaThreshold_dBm)
 
 void Mac1609_4::handleBroadcast(Mac80211Pkt* macPkt, DeciderResult80211* res)
 {
+    SignalStats signalStats = res->getSignalStats();
+
+    if(statsModule){
+        BaseMobility* mobMod = (BaseMobility *)getParentModule()->getParentModule()->getSubmodule("mobility");
+
+        if(mobMod == nullptr)
+            mobMod = (BaseMobility *)getParentModule()->getParentModule()->getSubmodule("veinsmobility");
+        
+        statsModule ->writeDataToCSV( macPkt->getSrcAddr(),
+                    this->getMACAddress(),
+                    mobMod->getPositionAt(simTime()).x,
+                    mobMod->getPositionAt(simTime()).y,
+                    res->getSnr(),
+                    res->getRecvPower_dBm(),
+                    simTime().dbl(),
+                    ((BaseMobility *)getModuleByPath("MultipleRSUScenario.rsu[0].mobility"))->getPositionAt(simTime()).z,
+                    getParentModule()->getParentModule()->getFullName(),
+                    signalStats
+                );
+    }
+
     statsReceivedBroadcasts++;
     unique_ptr<BaseFrame1609_4> wsm(check_and_cast<BaseFrame1609_4*>(macPkt->decapsulate()));
     auto ctrlInfo = new PhyToMacControlInfo(res);
@@ -563,6 +590,7 @@ void Mac1609_4::handleBroadcast(Mac80211Pkt* macPkt, DeciderResult80211* res)
 
 void Mac1609_4::handleLowerMsg(cMessage* msg)
 {
+
     Mac80211Pkt* macPkt = check_and_cast<Mac80211Pkt*>(msg);
 
     // pass information about received frame to the upper layers

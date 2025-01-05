@@ -197,18 +197,18 @@ std::vector<double> Obstacle::getIntersections(const Coord& senderPos, const Coo
 
     if(getHeight() <= 0 )
     {
-    const Obstacle::Coords& shape = getShape();
-    Obstacle::Coords::const_iterator i = shape.begin();
-    Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
-    for (; i != shape.end(); j = i++) {
-        const Coord& c1 = *i;
-        const Coord& c2 = *j;
+        const Obstacle::Coords& shape = getShape();
+        Obstacle::Coords::const_iterator i = shape.begin();
+        Obstacle::Coords::const_iterator j = (shape.rbegin() + 1).base();
+        for (; i != shape.end(); j = i++) {
+            const Coord& c1 = *i;
+            const Coord& c2 = *j;
 
             double i = segmentsIntersectSegment(senderPos, receiverPos, c1, c2);
-        if (i != -1) {
-            intersectAt.push_back(i);
+            if (i != -1) {
+                intersectAt.push_back(i);
+            }
         }
-    }
     }
     else
     {

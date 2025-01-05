@@ -1060,6 +1060,11 @@ std::list<Coord> TraCICommandInterface::Polygon::getShape()
     return traci->genericGetCoordList(CMD_GET_POLYGON_VARIABLE, polyId, VAR_SHAPE, RESPONSE_GET_POLYGON_VARIABLE);
 }
 
+double TraCICommandInterface::Polygon::getLayer()
+{
+    return traci->genericGetDouble(CMD_GET_POLYGON_VARIABLE, polyId, VAR_HEIGHT, RESPONSE_GET_POLYGON_VARIABLE);
+}
+
 TraCIColor TraCICommandInterface::Polygon::getColor()
 {
     TraCIColor res(0, 0, 0, 0);

@@ -460,6 +460,7 @@ public:
 
         std::string getTypeId();
         std::list<Coord> getShape();
+        double getLayer();
         TraCIColor getColor();
         bool getFilled();
         double getLineWidth();

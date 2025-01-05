@@ -55,6 +55,8 @@ public:
     double y;
     double z;
     /*@}*/
+    
+    int index;
 
 private:
     void copy(const Coord& other)
@@ -62,6 +64,7 @@ private:
         x = other.x;
         y = other.y;
         z = other.z;
+        index = other.index;
     }
 
 public:
@@ -70,14 +73,16 @@ public:
         : x(0.0)
         , y(0.0)
         , z(0.0)
+        , index(0)
     {
     }
 
     /** @brief Initializes a coordinate. */
-    Coord(double x, double y, double z = 0.0)
+    Coord(double x, double y, double z = 0.0, int index = 0)
         : x(x)
         , y(y)
         , z(z)
+        , index(index)
     {
     }
 
@@ -134,6 +139,39 @@ public:
     {
         return (a.x * b.x + a.y * b.y);
     }
+
+    /**
+     * @brief Calculates the cross product of two 3D vectors.
+     *
+     * This function computes the cross product of two 3D vectors represented by Coord objects.
+     * The resulting Coord represents a vector that is perpendicular to both input vectors.
+     *
+     * @param other The second 3D vector.
+     * @return The cross product vector of *this and other.
+     */
+    Coord crossProduct(const Coord& other) const 
+    {
+        Coord result;
+        result.x = y * other.z - z * other.y;
+        result.y = z * other.x - x * other.z;
+        result.z = x * other.y - y * other.x;
+        return result;
+    }
+
+    /**
+     * @brief Calculates the dot product of two 3D vectors.
+     *
+     * This function computes the dot product of two 3D vectors represented by Coord objects.
+     * The dot product is a scalar value that represents the projection of one vector onto the other.
+     *
+     * @param other The second 3D vector.
+     * @return The dot product of *this and other.
+     */
+    double dotProduct(const Coord& other) const
+    {
+        return x * other.x + y * other.y + z * other.z;
+    }
+
 
     /**
      * @brief Returns the magnitude of the vector that would result from a regular 3D cross product
@@ -232,6 +270,16 @@ public:
     friend bool operator!=(const Coord& a, const Coord& b)
     {
         return !(a == b);
+    }
+
+    /**
+     * @brief Compare 2 coordinates based on x and y position.
+     *
+     * Necessary for sorting during polygon triangulation process.
+     */
+    bool operator<(const Coord& other) const
+    {
+        return x < other.x || (x == other.x && y < other.y);
     }
 
     /**

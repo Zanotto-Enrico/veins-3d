@@ -4,6 +4,9 @@
 Define_Module(Statistics);
 
 void Statistics::initialize() {
+
+    start_time = std::time(nullptr);
+    
     std::string enable3d = "2d";
     if(((veins::BaseMacLayer *)getModuleByPath("MultipleRSUScenario.obstacles"))->par("enable3d"))
         enable3d = "3d";
@@ -44,6 +47,7 @@ void Statistics::writeDataToCSV(double src, double dst, double dst_posx, double 
 
 void Statistics::finish() {
 
+    file << "# exec_time: " << std::time(nullptr) - start_time;
     file.close();
 
 }

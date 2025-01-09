@@ -4,6 +4,7 @@
 #include <omnetpp.h>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 
 #include "veins/SignalStats.h"
 
@@ -14,6 +15,7 @@ class Statistics : public cSimpleModule {
     std::string outputFilePath;
     std::ofstream file;
     int run;
+    std::time_t start_time;
 
 
 
